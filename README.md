@@ -23,6 +23,8 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
   since joining; nobody inherits progress
 - 💰 **Coins, gems, lives** — 3 lives, ~2s of mercy after each hit, first
   player on the tile takes the loot
+- 🎉 **Confetti deaths** — players go out in a burst of tumbling neon
+  confetti, not a quiet despawn
 - 🏆 **Hall of fame** — session leaderboard on death, high scores persisted
   server-side
 - 🎮 **Keyboard + touch** — WASD/arrows on desktop; swipe to hop on mobile,

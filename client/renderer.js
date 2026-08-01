@@ -87,6 +87,81 @@ export function createRenderer(container) {
   const avatars = new Map();
   const walls = [];
 
+  const BURST_MS = 1500;
+  const CONFETTI = 42;
+  const bursts = [];
+  const confettiGeo = new THREE.BoxGeometry(0.3, 0.05, 0.2);
+  const confettiMat = new THREE.MeshBasicMaterial();
+  const bTmp = {
+    m4: new THREE.Matrix4(),
+    quat: new THREE.Quaternion(),
+    eul: new THREE.Euler(),
+    pos: new THREE.Vector3(),
+    scl: new THREE.Vector3()
+  };
+
+  function spawnBurst(at, colorHex) {
+    const mesh = new THREE.InstancedMesh(confettiGeo, confettiMat, CONFETTI);
+    const palette = [
+      new THREE.Color(colorHex),
+      new THREE.Color(0xffe93d),
+      new THREE.Color(0x2bfcff),
+      new THREE.Color(0xff3df0),
+      new THREE.Color(0xffffff)
+    ];
+    const parts = [];
+    for (let i = 0; i < CONFETTI; i++) {
+      const th = Math.random() * Math.PI * 2;
+      const sp = 3 + Math.random() * 4;
+      const side = 0.4 + Math.random() * 0.6;
+      parts.push({
+        x: at.x, y: at.y + 0.6, z: at.z,
+        vx: Math.cos(th) * sp * side,
+        vy: (0.25 + Math.random() * 0.9) * sp,
+        vz: Math.sin(th) * sp * side,
+        rx: Math.random() * Math.PI, rz: Math.random() * Math.PI,
+        wx: (Math.random() - 0.5) * 14, wz: (Math.random() - 0.5) * 14
+      });
+      mesh.setColorAt(i, palette[i % palette.length]);
+    }
+    mesh.instanceColor.needsUpdate = true;
+    scene.add(mesh);
+    bursts.push({ mesh, parts, t0: performance.now() });
+  }
+
+  function updateBursts(now, dt) {
+    const dts = dt / 1000;
+    for (let bi = bursts.length - 1; bi >= 0; bi--) {
+      const b = bursts[bi];
+      const k = (now - b.t0) / BURST_MS;
+      if (k >= 1) {
+        scene.remove(b.mesh);
+        b.mesh.dispose();
+        bursts.splice(bi, 1);
+        continue;
+      }
+      const s = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+      bTmp.scl.set(s, s, s);
+      for (let i = 0; i < b.parts.length; i++) {
+        const p = b.parts[i];
+        p.vy -= 7.5 * dts;
+        p.vx *= 0.985;
+        p.vz *= 0.985;
+        p.x += p.vx * dts;
+        p.y += p.vy * dts;
+        p.z += p.vz * dts;
+        p.rx += p.wx * dts;
+        p.rz += p.wz * dts;
+        bTmp.eul.set(p.rx, 0, p.rz);
+        bTmp.quat.setFromEuler(bTmp.eul);
+        bTmp.pos.set(p.x, p.y, p.z);
+        bTmp.m4.compose(bTmp.pos, bTmp.quat, bTmp.scl);
+        b.mesh.setMatrixAt(i, bTmp.m4);
+      }
+      b.mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   let displayDepth = 0;
   let snapDepth = 0;
   let snapSpeed = 0;
@@ -308,8 +383,15 @@ export function createRenderer(container) {
           a.cell = { x: p.x, z: p.z };
         }
       }
+      const all = new Map(snap.players.map(p => [p.id, p]));
       for (const id of [...avatars.keys()]) {
-        if (!seen.has(id)) dropAvatar(id);
+        if (!seen.has(id)) {
+          const gone = all.get(id);
+          if (gone && gone.status === 'dead') {
+            spawnBurst(avatars.get(id).group.position, cfg.colors[gone.color]);
+          }
+          dropAvatar(id);
+        }
       }
     },
 
@@ -351,6 +433,8 @@ export function createRenderer(container) {
         a.group.visible = !(p && p.inv && Math.floor(now / 120) % 2 === 0);
         a.label.visible = !(camMode === 'chase' && id === myId);
       }
+
+      updateBursts(now, dt);
 
       const me = avatars.get(myId);
       column.visible = !!me;
