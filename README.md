@@ -86,12 +86,14 @@ bundler, no framework.
 
 ```bash
 npm test                     # server suite: real ws clients drive join/move/
-                             # pickup/death/16-cap/drop-in fairness/pit reset,
-                             # env config + /healthz, hardening (markup-stripped
-                             # names, socket cap, message rate limit)
+                             # pickup/death/16-cap/drop-in fairness/pit reset
+                             # + layer rebroadcast, env config + /healthz,
+                             # hardening (markup-stripped names, socket cap,
+                             # rate limit), seat grace + token reclaim
 node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
                              # joins, verifies a synthetic touch swipe against
-                             # server state, screenshots. BOTS=n for a crowd
+                             # server state, reloads to prove the seat token
+                             # auto-reclaims, screenshots. BOTS=n for a crowd
 node tools/mobile_smoke.mjs  # same client under phone emulation (touch, 3x
                              # DPR): quick-start, tap-to-join, swipe + rotated
                              # swipe, layout overflow checks, screenshots of

@@ -84,7 +84,10 @@ Server → client:
   layer is a 49-char string (`.#^$*`).
 - `{t:'snap', depth, speed, players, ev}` — 20Hz. `ev` is this tick's events
   (pickup/hit/death/join/leave/levelup) for HUD toasts and effects.
-- `{t:'scores', board}` · `{t:'reject', reason}`
+- `{t:'joined', id, token, entry?}` — token reclaims the seat on any later
+  socket; `entry` present when reclaiming a seat that died while away.
+- `{t:'scores', board}` · `{t:'reject', reason}` · `{t:'reclaim', ok:false}`
+  (unknown/expired token — client clears it and shows the join screen)
 
 Client renders `displayDepth` by extrapolating snap depth with `speed` and
 easing toward corrections — layers scroll smoothly between 20Hz snaps.
