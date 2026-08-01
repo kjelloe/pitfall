@@ -11,7 +11,7 @@ fairness rule, **you only score what you survive**.
 A low-poly three.js re-imagining of the classic falling-down-the-well /
 *Deep II*-style pit games.
 
-![Pitfall: Drop-Zone — eleven players falling through the neon pit](docs/screenshot.png)
+![Pitfall: Drop-Zone — chase cam view of eleven players falling through the neon pit, with the helper column marking your tile and view-rotation buttons on the edges](docs/screenshot.png)
 
 ## Features
 
