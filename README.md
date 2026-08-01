@@ -36,7 +36,8 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
   scanlines, on a three.js build that still falls back to WebGL1 for old GPUs
 - 🔌 **Drop-proof sessions** — background the tab, lock the phone, reload
   the page, even ride out a server redeploy: your seat is held for 45 s
-  and reclaimed automatically, mid-run state intact
+  and reclaimed automatically, mid-run state intact. Away too long? You
+  get a one-tap drop-back-in screen, never a frozen page
 
 ## Quick start
 
@@ -96,7 +97,8 @@ npm test                     # server suite: real ws clients drive join/move/
 node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
                              # joins, verifies a synthetic touch swipe against
                              # server state, reloads to prove the seat token
-                             # auto-reclaims, screenshots. BOTS=n for a crowd
+                             # auto-reclaims, drives the lost-seat recovery
+                             # screen, screenshots. BOTS=n for a crowd
 node tools/mobile_smoke.mjs  # same client under phone emulation (touch, 3x
                              # DPR): quick-start, tap-to-join, swipe + rotated
                              # swipe, layout overflow checks, screenshots of

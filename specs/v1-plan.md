@@ -114,7 +114,8 @@ handshake) — that is a normal event, not an error path.
   reload; a superseded socket is closed (4000). Reclaiming a seat that died
   while away returns the stored entry so the client can show the death
   screen. Unknown/expired token → `{t:'reclaim', ok:false}` → client clears
-  the token and shows the join screen ("SEAT EXPIRED").
+  the token and lands on the run-ended drop-back-in screen (see seat-gone
+  recovery below).
 - **Client reconnect**: every close is treated as recoverable (never branch
   on close codes). Retry at 1 s with backoff to 5 s, plus an immediate
   reconnect on `visibilitychange → visible`. A pulsing RECONNECTING banner
