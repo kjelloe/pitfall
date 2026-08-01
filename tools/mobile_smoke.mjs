@@ -125,8 +125,10 @@ const overflow = () =>
 
 try {
   await page.goto(`http://127.0.0.1:${srv.port}/`);
+  // Generous timeout: SwiftShader + the three.js module parse can be slow
+  // on a loaded machine.
   await page.waitForSelector('#quickstart-overlay:not(.hidden)', {
-    timeout: 5000
+    timeout: 15000
   });
   await page.waitForTimeout(400);
   await page.screenshot({ path: shot('portrait-quickstart') });
@@ -198,6 +200,10 @@ try {
   } else {
     console.log('MOBILE SMOKE OK');
   }
+} catch (e) {
+  console.error('MOBILE SMOKE CRASHED:', e.message);
+  for (const err of errors) console.error(' - page error:', err);
+  process.exitCode = 1;
 } finally {
   for (const b of bots) b.close();
   await browser.close();

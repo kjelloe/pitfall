@@ -86,8 +86,10 @@ try {
   await page.goto(`http://127.0.0.1:${srv.port}/`);
 
   // First visit: quick-start overlay must appear; dismiss it to reach join.
+  // Generous timeout: SwiftShader + the three.js module parse can be slow
+  // on a loaded machine.
   await page.waitForSelector('#quickstart-overlay:not(.hidden)', {
-    timeout: 5000
+    timeout: 15000
   });
   await page.click('#quickstart-btn');
 
@@ -202,6 +204,10 @@ try {
   } else {
     console.log('CLIENT SMOKE OK');
   }
+} catch (e) {
+  console.error('CLIENT SMOKE CRASHED:', e.message);
+  for (const err of errors) console.error(' - page error:', err);
+  process.exitCode = 1;
 } finally {
   for (const b of bots) b.close();
   await browser.close();

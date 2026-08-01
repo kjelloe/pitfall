@@ -21,6 +21,14 @@ function createGame(C, opts = {}) {
     nextSeat: 1
   };
 
+  if (opts.restore) {
+    state.depth = opts.restore.depth;
+    state.layers = opts.restore.layers;
+    state.players = new Map(opts.restore.players);
+    state.nextId = opts.restore.nextId;
+    state.nextSeat = opts.restore.nextSeat;
+  }
+
   const events = [];
 
   function level() {

@@ -429,3 +429,49 @@ test('seat survives a dropped socket; token reclaims it, grace expires it', asyn
     await srv2.close();
   }
 });
+
+test('mid-session server restart: session restores, token resumes the run', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpf-restart-'));
+  const scoresFile = path.join(dir, 'hs.json');
+
+  const srv = await start({ port: 0, scoresFile, graceMs: 8000 });
+  const c1 = await connect(srv.port);
+  await c1.waitFor(m => m.t === 'hello');
+  c1.send({ t: 'join', name: 'PHOENIX' });
+  const joined = await c1.waitFor(m => m.t === 'joined');
+  await c1.waitFor(m => myPlayer(m, joined.id));
+
+  const t0 = Date.now();
+  while (srv.game.state.depth < 1.5 && Date.now() - t0 < 5000) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  const preDepth = srv.game.state.depth;
+  assert.ok(preDepth >= 1.5, 'pit should have fallen a bit');
+  await srv.close(); // saves the session synchronously (deploy/SIGTERM path)
+
+  const srv2 = await start({ port: 0, scoresFile, graceMs: 8000 });
+  try {
+    assert.ok(
+      srv2.game.state.players.has(joined.id),
+      'player must survive the restart'
+    );
+    assert.ok(
+      srv2.game.state.depth >= preDepth - 0.01,
+      `depth went backwards: ${preDepth} -> ${srv2.game.state.depth}`
+    );
+
+    const c2 = await connect(srv2.port);
+    await c2.waitFor(m => m.t === 'hello');
+    c2.send({ t: 'reclaim', token: joined.token });
+    const back = await c2.waitFor(m => m.t === 'joined');
+    assert.strictEqual(back.id, joined.id, 'token must resume the same run');
+    const snap = await c2.waitFor(m => myPlayer(m, back.id));
+    assert.strictEqual(
+      snap.players.find(p => p.id === back.id).status,
+      'alive'
+    );
+    c2.ws.close();
+  } finally {
+    await srv2.close();
+  }
+});

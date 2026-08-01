@@ -1,5 +1,6 @@
 node_modules/
 server/highscores.json
+server/session.json
 *.tgz
 
 # Filled-in hosting config (holds SSH key + email + deploy user/host — never commit)

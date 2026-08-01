@@ -67,10 +67,41 @@ async function start(options = {}) {
   const port = options.port !== undefined ? options.port : 8080;
   const scoresFile =
     options.scoresFile || path.join(__dirname, 'highscores.json');
+  const graceMs =
+    options.graceMs !== undefined ? options.graceMs : C.RECONNECT_GRACE_MS;
+  const sessionFile =
+    options.sessionFile || path.join(path.dirname(scoresFile), 'session.json');
+  const SESSION_SAVE_MS = 5000;
+
+  // The token is only useful if the server still remembers the game — and on
+  // a shared box every deploy restarts the process. Restore a recent session
+  // so a restart costs a mid-run player a reconnect, not their run.
+  let restored = null;
+  try {
+    const s = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
+    if (
+      s.savedAt &&
+      Date.now() - s.savedAt <= graceMs &&
+      Array.isArray(s.seats) &&
+      s.seats.length
+    ) {
+      restored = s;
+    }
+  } catch { /* no session to restore */ }
 
   let saveQueued = false;
+  const seatPids = restored
+    ? new Set(restored.seats.map(([, s]) => s.playerId))
+    : null;
   const game = createGame(C, {
     initialBoard: loadBoard(scoresFile),
+    restore: restored && {
+      depth: restored.depth,
+      layers: restored.layers,
+      nextId: restored.nextId,
+      nextSeat: restored.nextSeat,
+      players: restored.players.filter(([id]) => seatPids.has(id))
+    },
     onRunEnd: (entry, board) => {
       if (saveQueued) return;
       saveQueued = true;
@@ -95,11 +126,48 @@ async function start(options = {}) {
   const maxSockets = options.maxSockets || 64;
   const rateMax = options.rateMax || 300;
   const RATE_WINDOW_MS = 10000;
-  const graceMs =
-    options.graceMs !== undefined ? options.graceMs : C.RECONNECT_GRACE_MS;
   // Presence is a server-side fact with a timeout, not a socket. A dropped
   // socket marks the seat disconnected; the token reclaims it within grace.
   const seats = new Map(); // token -> { playerId, ws, disconnectedAt, entry }
+  if (restored) {
+    for (const [token, s] of restored.seats) {
+      seats.set(token, {
+        playerId: s.playerId,
+        ws: null,
+        disconnectedAt: Date.now(), // grace clock starts at boot
+        entry: s.entry || null
+      });
+    }
+    console.log(
+      `restored session: depth ${Math.floor(restored.depth)}, ` +
+        `${seats.size} seat(s) reclaimable`
+    );
+  }
+
+  function saveSession(sync) {
+    const data = JSON.stringify({
+      savedAt: Date.now(),
+      depth: game.state.depth,
+      layers: game.state.layers,
+      nextId: game.state.nextId,
+      nextSeat: game.state.nextSeat,
+      players: [...game.state.players.entries()],
+      seats: [...seats].map(([t, s]) => [
+        t, { playerId: s.playerId, entry: s.entry }
+      ])
+    });
+    if (sync) {
+      try {
+        fs.writeFileSync(sessionFile, data);
+      } catch (err) {
+        console.error('session save failed:', err.message);
+      }
+    } else {
+      fs.writeFile(sessionFile, data, err => {
+        if (err) console.error('session save failed:', err.message);
+      });
+    }
+  }
 
   const send = (ws, msg) => {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
@@ -214,11 +282,17 @@ async function start(options = {}) {
   });
 
   let last = Date.now();
+  let lastSessionSave = Date.now();
   const timer = setInterval(() => {
     const t = Date.now();
     const dt = Math.min(250, t - last);
     last = t;
     game.tick(dt);
+
+    if (t - lastSessionSave > SESSION_SAVE_MS) {
+      lastSessionSave = t;
+      saveSession(false);
+    }
 
     for (const [token, seat] of seats) {
       if (seat.disconnectedAt && t - seat.disconnectedAt > graceMs) {
@@ -263,6 +337,7 @@ async function start(options = {}) {
     close: () =>
       new Promise(resolve => {
         clearInterval(timer);
+        saveSession(true); // deploys SIGTERM us — hand the session over losslessly
         for (const ws of wss.clients) ws.terminate();
         wss.close(() => server.close(resolve));
       })
@@ -274,10 +349,16 @@ if (require.main === module) {
     port: process.env.PORT ? Number(process.env.PORT) : 8080,
     host: process.env.HOST || undefined,
     scoresFile: process.env.SCORES_FILE || undefined
-  }).catch(err => {
-    console.error(err);
-    process.exit(1);
-  });
+  })
+    .then(srv => {
+      const shutdown = () => srv.close().then(() => process.exit(0));
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
+    })
+    .catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
 }
 
 module.exports = { start };

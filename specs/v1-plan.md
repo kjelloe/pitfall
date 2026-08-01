@@ -122,13 +122,27 @@ handshake) — that is a normal event, not an error path.
   cursor — clients kept stale geometry and the first levels looked empty.
   The server now rewinds the cursor and re-broadcasts from 0; clients treat
   a `layers` message with `from === 0` as "clear and rebuild".
+- **Session persistence across restarts** (ally follow-up: "the token is
+  only useful if the server still remembers the game" — and on a shared box
+  every deploy restarts the process). The server autosaves the session
+  (depth, layers, players, seats) to `session.json` next to the scores file
+  every 5 s, plus synchronously on shutdown — systemd sends SIGTERM on
+  restart, so deploys hand over losslessly; crashes lose ≤ 5 s. On boot a
+  session younger than the grace window restores, with every seat's grace
+  clock restarted; clients auto-reconnect and reclaim, so a deploy costs a
+  mid-run player ~3 s of RECONNECTING banner, not their run. On the box the
+  file lives in `/opt/pitfall/saves/` (already writable, already outside
+  the rsync allowlist — no unit change needed). Players without a seat are
+  dropped on restore; a token the server no longer knows still gets the
+  friendly "SEAT EXPIRED — DROP BACK IN" join screen, never a dead end.
 - Known trade-off: disconnected-but-alive ghosts count toward the 16 cap
   and block pit reset until they die or grace expires — bounded at 45 s.
 
 Covered by test 8 (drop → seat held → dies while away → reclaim returns
-same id + entry; short-grace server → seat freed, token refused) and the
-reset-rebroadcast assertion in test 5; the browser smoke reloads the page
-and verifies the seat auto-reclaims.
+same id + entry; short-grace server → seat freed, token refused), test 9
+(join → play → full server restart → state restored, token resumes the
+same live run) and the reset-rebroadcast assertion in test 5; the browser
+smoke reloads the page and verifies the seat auto-reclaims.
 
 ## Renderer economics
 
