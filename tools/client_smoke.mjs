@@ -37,7 +37,8 @@ function spawnBot(port, name) {
   return ws;
 }
 
-const shot = process.argv[2] || path.join(os.tmpdir(), 'multipitfall-smoke.png');
+const shot =
+  process.argv[2] || path.join(os.tmpdir(), 'pitfall-drop-zone-smoke.png');
 
 function findChromium() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -86,6 +87,41 @@ try {
   await page.fill('#join-name', 'SMOKE');
   await page.click('#join-btn');
   await page.waitForSelector('#topbar:not(.hidden)', { timeout: 5000 });
+
+  // Touch check: swipe toward the grid centre, expect a one-cell hop
+  // (verified against authoritative server state).
+  const me = () =>
+    [...srv.game.state.players.values()].find(p => p.name === 'SMOKE');
+  const x0 = me().x;
+  const goEast = x0 <= 3;
+  await page.evaluate(east => {
+    const el = document.getElementById('scene');
+    const mk = (x, y) =>
+      new Touch({ identifier: 7, target: el, clientX: x, clientY: y });
+    const opts = t => ({
+      touches: t, changedTouches: t, bubbles: true, cancelable: true
+    });
+    const endX = east ? 360 : 240;
+    el.dispatchEvent(new TouchEvent('touchstart', opts([mk(300, 300)])));
+    el.dispatchEvent(new TouchEvent('touchmove', opts([mk(endX, 300)])));
+    el.dispatchEvent(
+      new TouchEvent('touchend', {
+        touches: [], changedTouches: [mk(endX, 300)],
+        bubbles: true, cancelable: true
+      })
+    );
+  }, goEast);
+  const wantX = x0 + (goEast ? 1 : -1);
+  const t0 = Date.now();
+  while (me().x !== wantX && Date.now() - t0 < 2000) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (me().x !== wantX) {
+    errors.push(`touch swipe did not move player (x ${x0} -> ${me().x})`);
+  } else {
+    console.log('touch swipe OK:', x0, '->', me().x);
+  }
+
   await page.waitForTimeout(3000);
 
   const hud = await page.evaluate(() => ({

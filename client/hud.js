@@ -10,6 +10,7 @@ export function createHud() {
   let lastBoard = [];
   let lastEntry = null;
   let inGame = false;
+  let maxPlayers = 16;
 
   const joinOverlay = $('join-overlay');
   const deathOverlay = $('death-overlay');
@@ -33,6 +34,10 @@ export function createHud() {
   });
   nameInput.focus();
 
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    $('help').textContent = 'SWIPE — MOVE';
+  }
+
   function renderBoard(table, youEntry) {
     let html =
       '<tr><th>#</th><th>NAME</th><th>SCORE</th><th>DEPTH</th><th>JOIN</th></tr>';
@@ -48,6 +53,10 @@ export function createHud() {
     });
     table.innerHTML = html;
   }
+
+  hud.setCfg = cfg => {
+    maxPlayers = cfg.maxPlayers;
+  };
 
   hud.setScores = board => {
     lastBoard = board || [];
@@ -67,7 +76,7 @@ export function createHud() {
   };
 
   hud.joinError = reason => {
-    const msgs = { full: 'PIT IS FULL (16 MAX) — TRY AGAIN SOON' };
+    const msgs = { full: `PIT IS FULL (${maxPlayers} MAX) — TRY AGAIN SOON` };
     $('join-err').textContent = msgs[reason] || 'JOIN FAILED: ' + reason;
     show(joinOverlay, true);
   };
@@ -113,7 +122,7 @@ export function createHud() {
     $('players').innerHTML =
       `<div class="row"><span>PLAYERS ${
         snap.players.filter(p => p.status === 'alive').length
-      }/16</span><span>L${snap.level}</span></div>` + rows.join('');
+      }/${maxPlayers}</span><span>L${snap.level}</span></div>` + rows.join('');
   };
 
   hud.toast = (text, color) => {

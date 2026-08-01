@@ -176,7 +176,7 @@ async function start(options = {}) {
 
   await new Promise(resolve => server.listen(port, resolve));
   const actualPort = server.address().port;
-  console.log(`multipitfall serving on http://localhost:${actualPort}`);
+  console.log(`pitfall-drop-zone serving on http://localhost:${actualPort}`);
 
   return {
     port: actualPort,

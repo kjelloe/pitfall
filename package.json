@@ -1,8 +1,8 @@
 {
-  "name": "multipitfall",
+  "name": "pitfall-drop-zone",
   "version": "0.1.0",
   "private": true,
-  "description": "Multi-Pitfall: low-poly multiplayer falling-pit arcade game",
+  "description": "Pitfall: Drop-Zone — low-poly 16-player falling-pit arcade game",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",

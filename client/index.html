@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MULTI-PITFALL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>PITFALL: DROP-ZONE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2305060a'/%3E%3Ccircle cx='8' cy='8' r='5' fill='none' stroke='%232bfcff' stroke-width='2'/%3E%3C/svg%3E">
 <style>
   :root {
@@ -19,7 +19,7 @@
     color: #cfd6ff;
     user-select: none;
   }
-  #scene { position: fixed; inset: 0; }
+  #scene { position: fixed; inset: 0; touch-action: none; }
   #scene canvas { display: block; }
 
   #scanlines {
@@ -148,7 +148,7 @@
 
   <div id="join-overlay" class="overlay">
     <div class="panel">
-      <h1>MULTI-PITFALL</h1>
+      <h1>PITFALL: DROP-ZONE</h1>
       <p class="tag">FALL. DODGE. GET RICH. GO DEEPER.</p>
       <div class="err" id="join-err"></div>
       <input id="join-name" maxlength="12" placeholder="YOUR NAME" autocomplete="off">

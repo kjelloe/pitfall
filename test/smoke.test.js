@@ -71,7 +71,7 @@ test('serves the client over http', async () => {
         res.on('end', () => resolve(b));
       }).on('error', reject);
     });
-    assert.match(body, /MULTI-PITFALL/);
+    assert.match(body, /PITFALL: DROP-ZONE/);
   } finally {
     await srv.close();
   }
@@ -142,6 +142,30 @@ test('join, move, pickup, death, scoring', async () => {
     assert.ok(saved.some(e => e.name === 'TESTER'));
     c1.ws.close();
   } finally {
+    await srv.close();
+  }
+});
+
+test('caps the pit at 16 players and rejects the 17th', async () => {
+  const srv = await boot();
+  const clients = [];
+  try {
+    for (let i = 1; i <= 16; i++) {
+      const c = await connect(srv.port);
+      clients.push(c);
+      await c.waitFor(m => m.t === 'hello');
+      c.send({ t: 'join', name: `P${i}` });
+      await c.waitFor(m => m.t === 'joined');
+    }
+    const extra = await connect(srv.port);
+    clients.push(extra);
+    const hello = await extra.waitFor(m => m.t === 'hello');
+    assert.strictEqual(hello.cfg.maxPlayers, 16);
+    extra.send({ t: 'join', name: 'SEVENTEENTH' });
+    const reject = await extra.waitFor(m => m.t === 'reject');
+    assert.strictEqual(reject.reason, 'full');
+  } finally {
+    for (const c of clients) c.ws.close();
     await srv.close();
   }
 });

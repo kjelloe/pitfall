@@ -9,6 +9,7 @@ const hud = createHud();
 
 session.on('hello', m => {
   window.__colors = m.cfg.colors;
+  hud.setCfg(m.cfg);
   renderer.init(m.cfg);
   renderer.primeDepth(m.depth);
   renderer.setLayers(m.layersFrom, m.rows);

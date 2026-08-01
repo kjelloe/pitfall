@@ -1,7 +1,9 @@
-# Multi-Pitfall v1 — Build Plan
+# Pitfall: Drop-Zone v1 — Build Plan
 
-*Written 2026-08-01. A fun, lightweight re-imagining of the falling-down-the-well
-pitfall genre ("Deep II: 3D Descent" design in
+*Written 2026-08-01 as "Multi-Pitfall"; briefly "Pitfall Retro 8" (cap 8),
+then renamed "Pitfall: Drop-Zone" with the cap restored to 16 the same day.
+A fun, lightweight re-imagining of the falling-down-the-well pitfall genre
+("Deep II: 3D Descent" design in
 `retrogradegames/pitfall/multi-pitfall-design.md`), rendered with low-poly
 three.js instead of ASCII. Up to 16 players, drop-in multiplayer.*
 
@@ -16,7 +18,7 @@ three.js instead of ASCII. Up to 16 players, drop-in multiplayer.*
 | Art | Neon-retro low poly: flat-shaded meshes, bright ANSI-like palette on dark shaft, fog-to-black below, CSS scanline overlay |
 | v1 scope | Core fall + drop-in: move/dodge, coins/gems, lives, death, personal-depth scoring, session leaderboard, high-score persistence. No shops/items/zone themes |
 | Join flow | One always-open session per server; open the URL, type a name, drop in at current depth |
-| Platforms | Desktop keyboard only (grid hops make swipe trivial later) |
+| Platforms | Desktop keyboard first; swipe touch controls added 2026-08-01 (same client, `(pointer: coarse)` gates the help text only — swipe always listens) |
 
 ## Game rules (v1)
 
@@ -95,6 +97,8 @@ lazily as they enter the window and dispose after passing the plane.
 
 ## Out of scope for v1 (round two candidates)
 
-Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, touch
-controls, sound (PC-speaker-style WebAudio blips), spectator camera, join
-codes/multiple rooms, global leaderboard, seeded/deterministic pits, replays.
+Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, sound
+(PC-speaker-style WebAudio blips), spectator camera, join codes/multiple
+rooms, global leaderboard, seeded/deterministic pits, replays.
+(Touch controls landed 2026-08-01: swipe to hop, drag past the threshold to
+chain hops, verified by a synthetic-swipe check in `tools/client_smoke.mjs`.)

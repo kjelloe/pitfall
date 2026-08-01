@@ -1,4 +1,4 @@
-# Multi-Pitfall
+# Pitfall: Drop-Zone
 
 A fun, lightweight multiplayer re-imagining of the falling-down-the-well
 pitfall genre — low-poly neon-retro three.js, up to 16 players, drop-in
@@ -17,14 +17,18 @@ npm start          # serves http://localhost:8080  (PORT=n to override)
 ```
 
 Open the URL in any browser, type a name, DROP IN. Friends on the LAN use
-`http://<your-ip>:8080`. Controls: WASD / arrow keys.
+`http://<your-ip>:8080`.
+
+Controls: WASD / arrow keys on desktop; on touch devices swipe to hop, keep
+dragging to chain hops.
 
 ## Test
 
 ```bash
-npm test                    # server smoke suite (join/move/pickup/death/drop-in/reset)
-node tools/client_smoke.mjs  # real client in headless Chromium + screenshot
-                            # (needs a cached Playwright chromium; BOTS=n for crowd)
+npm test                     # server suite (join/move/pickup/death/16-cap/drop-in/reset)
+node tools/client_smoke.mjs  # real client in headless Chromium: join, synthetic
+                             # touch swipe, screenshot (needs a cached Playwright
+                             # chromium; BOTS=n for crowd)
 ```
 
 ## Layout
@@ -32,7 +36,8 @@ node tools/client_smoke.mjs  # real client in headless Chromium + screenshot
 - `server/` — CommonJS: `server.js` (HTTP static + ws + 20Hz tick pump),
   `game.js` (authoritative game logic). High scores persist to
   `server/highscores.json`.
-- `shared/const.mjs` — tuning constants, served to the browser as-is.
+- `shared/const.mjs` — tuning constants (player cap, speeds, palette),
+  served to the browser as-is.
 - `client/` — no-build ES modules; `vendor/three.module.js` pinned at r162
   (last WebGL1-fallback release).
 - `specs/` — design of record.
