@@ -104,12 +104,20 @@ touch neighbouring games' nginx/systemd/files; `nginx -t` before reload;
 reload never restart). An earlier `npm pack` + tarball approach was replaced
 the same day to copy the sibling's pattern instead.
 
-`./ssh-deploy.sh` (repo root, mirrors `multiciv/ssh-deploy.sh`): provenance
-guard (dirty-tree prompt, `--yes` to skip) → allowlist rsync (`client/
-server/ shared/ package*.json` only; `/server/highscores.json` excluded) →
-`npm ci --omit=dev` → `systemctl restart pitfall` → deploy guard (`sleep 3` +
-`curl 127.0.0.1:8130/healthz` catches crash-loops) → package.json sha1
-content check against partial syncs.
+`./ssh-deploy.sh` (repo root, mirrors `multiciv/ssh-deploy.sh`; tightened
+2026-08-01 per the RetroMultiCiv ally's requirements): provenance guard
+(dirty-tree prompt, `--yes` to skip) → allowlist rsync (`client/ server/
+shared/ package*.json` only; `/server/highscores.json` and WSL
+`*:Zone.Identifier` files excluded) → `npm ci --omit=dev` → `systemctl
+restart pitfall` → four-stage verify: `sleep 3` + loopback healthz (catches
+crash-loops), then the MANDATORY public check
+`https://pitfall.kjell.today/healthz` (loopback can't see nginx/TLS/DNS),
+then the neighbour check (`https://multiciv.kjell.today` must still
+answer), then a package.json sha1 content check against partial syncs. The
+whole deploy multiplexes over one ssh connection (ControlMaster). Neighbour
+ports 8123/8200 are never touched. Shared-state steps (nginx reload,
+certbot --expand) are run by the operator with the ally watching, per
+their request.
 
 `deploy/pitfall.service`: User=kjelloe, WorkingDirectory=/opt/pitfall,
 Environment PORT=8130 / HOST=127.0.0.1 /
