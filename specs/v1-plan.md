@@ -67,7 +67,10 @@ client/hud.js       DOM HUD: score/gold/lives/level, player list, join
 client/main.js      Boot + render loop + wiring.
 test/smoke.test.js  node --test: boots the real server, drives real ws
                     clients: join, snapshots flow, moves apply, pickup and
-                    death resolve, drop-in join_level is honored.
+                    death resolve, drop-in join_level is honored, env
+                    config, hardening caps, seat grace/reclaim, restart
+                    restore. tools/ adds two headless-Chromium smokes
+                    (desktop + phone emulation) against the real client.
 ```
 
 Dependency tree: `ws` (runtime) + vendored three.js. Nothing else.

@@ -34,7 +34,8 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
 - 🖥️ **Retro-friendly rendering** — flat-shaded neon low poly with CRT
   scanlines, on a three.js build that still falls back to WebGL1 for old GPUs
 - 🔌 **Drop-proof sessions** — background the tab, lock the phone, reload
-  the page: your seat is held for 45 s and reclaimed automatically
+  the page, even ride out a server redeploy: your seat is held for 45 s
+  and reclaimed automatically, mid-run state intact
 
 ## Quick start
 
@@ -74,7 +75,7 @@ server/   CommonJS — server.js (HTTP static + ws + tick pump), game.js (game l
 shared/   const.mjs — tuning constants (cap, speeds, palette), served to the browser as-is
 client/   No-build ES modules — session seam, three.js renderer, HUD, input
 specs/    Design of record (v1 build plan, decision log)
-tools/    Headless-browser smoke test
+tools/    Headless-browser smoke tests (desktop + phone emulation)
 ```
 
 Dependencies: [`ws`](https://github.com/websockets/ws) at runtime,
@@ -89,7 +90,8 @@ npm test                     # server suite: real ws clients drive join/move/
                              # pickup/death/16-cap/drop-in fairness/pit reset
                              # + layer rebroadcast, env config + /healthz,
                              # hardening (markup-stripped names, socket cap,
-                             # rate limit), seat grace + token reclaim
+                             # rate limit), seat grace + token reclaim,
+                             # restart survival (session autosave/restore)
 node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
                              # joins, verifies a synthetic touch swipe against
                              # server state, reloads to prove the seat token
