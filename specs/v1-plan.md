@@ -234,6 +234,17 @@ once and never again after reload, chase is default, camera toggles,
 rotation remaps a swipe to the correct world direction, and it screenshots
 chase, diorama, and rotated views.
 
+Playtest 2 on-device feedback (2026-08-01): on touch devices the topbar
+LIVES text is replaced by **big glowing hearts on a dark chip under the
+play area** (lost lives dimmed; hidden on the death screen; count from
+`cfg.startLives`). Also added while in there: `viewport-fit=cover` +
+`env(safe-area-inset-*)` so bottom HUD clears the iPhone home indicator;
+best-effort Screen Wake Lock while playing (re-requested on tab-visible —
+swipes are too intermittent to keep phones from dimming); vibration on hit
+(60 ms) and death (pattern) — Android only, iOS ignores it. Mobile smoke
+asserts hearts visible + topbar lives hidden on touch, desktop smoke
+asserts hearts stay hidden.
+
 Mobile pass 2026-08-01, ahead of the user's phone playtest: responsive HUD
 via media queries — topbar stats fit at ≤600px (12px/10px gap) and ≤360px
 (11px/7px); players roster shrinks to 124px; overlay panels get screen-edge

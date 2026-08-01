@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>PITFALL: DROP-ZONE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2305060a'/%3E%3Ccircle cx='8' cy='8' r='5' fill='none' stroke='%232bfcff' stroke-width='2'/%3E%3C/svg%3E">
 <style>
@@ -129,7 +129,25 @@
   .panel .qs b { color: var(--neon-yellow); }
   .hidden { display: none !important; }
   #help {
-    bottom: 8px; left: 12px; font-size: 11px; color: #59639c;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    font-size: 11px; color: #59639c;
+  }
+  #lives-big {
+    display: none;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: 50%; transform: translateX(-50%);
+    font-size: 30px; line-height: 1.15; letter-spacing: 8px;
+    padding: 1px 8px 4px 16px;
+    background: rgba(5, 6, 10, 0.65);
+    border: 1px solid #232a4d;
+    color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink);
+    pointer-events: none; white-space: nowrap;
+  }
+  #lives-big .lost { opacity: 0.22; text-shadow: none; }
+  @media (pointer: coarse) {
+    #lives-big:not(.hidden) { display: block; }
+    #topbar .stat.lives { display: none; }
   }
   #reconnect {
     top: 44px; left: 50%; transform: translateX(-50%);
@@ -143,7 +161,9 @@
     50% { opacity: 0.45; }
   }
   #cam-btn {
-    position: fixed; right: 8px; bottom: 8px; z-index: 20;
+    position: fixed; z-index: 20;
+    right: calc(8px + env(safe-area-inset-right, 0px));
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     background: rgba(5, 6, 10, 0.55); color: var(--neon-cyan);
     border: 1px solid #33407a;
     font-family: inherit; font-size: 24px; letter-spacing: 3px;
@@ -200,6 +220,7 @@
   <div id="toasts" class="hud"></div>
   <div id="help" class="hud hidden">WASD / ARROWS — MOVE</div>
   <div id="reconnect" class="hud hidden">RECONNECTING&hellip;</div>
+  <div id="lives-big" class="hud hidden"></div>
   <button id="cam-btn" class="hud hidden">CHASE CAM</button>
   <button id="rot-left" class="hud rot-btn hidden" title="Rotate view left">&#10226;</button>
   <button id="rot-right" class="hud rot-btn hidden" title="Rotate view right">&#10227;</button>

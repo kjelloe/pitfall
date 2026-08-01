@@ -34,9 +34,13 @@ session.on('snap', m => {
       hud.toast(`LEVEL ${ev.level}`, '#ffe93d');
     } else if (ev.k === 'hit' && ev.id === session.id) {
       hud.toast(`OUCH — ${ev.lives} LEFT`, '#ff4d5e');
+      if (navigator.vibrate) navigator.vibrate(60);
     } else if (ev.k === 'death') {
       hud.toast(`${ev.name} DIED AT ${ev.score}`, '#ff3df0');
-      if (ev.id === session.id) hud.showDeath(ev.entry);
+      if (ev.id === session.id) {
+        hud.showDeath(ev.entry);
+        if (navigator.vibrate) navigator.vibrate([80, 60, 160]);
+      }
     } else if (ev.k === 'reset') {
       hud.toast('THE PIT RESETS', '#3dff6e');
     }
@@ -47,6 +51,21 @@ session.on('scores', m => hud.setScores(m.board));
 session.on('joined', m => {
   hud.onJoined();
   if (m.entry) hud.showDeath(m.entry);
+  keepAwake();
+});
+
+// Phones dim and lock mid-fall — swipes are too intermittent to reset the
+// idle timer. Best-effort screen wake lock while playing; auto-released on
+// hide, so re-request when the tab is visible again.
+let wakeLock = null;
+async function keepAwake() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch (e) { /* denied or unsupported — not worth surfacing */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && session.id) keepAwake();
 });
 session.on('reject', m => hud.joinError(m.reason));
 session.on('reclaim', m => {

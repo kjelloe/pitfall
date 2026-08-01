@@ -143,8 +143,12 @@ try {
     score: document.getElementById('hud-score').textContent,
     level: document.getElementById('hud-level').textContent,
     depth: document.getElementById('hud-depth').textContent,
-    lives: document.getElementById('hud-lives').textContent
+    lives: document.getElementById('hud-lives').textContent,
+    bigHearts: getComputedStyle(document.getElementById('lives-big')).display
   }));
+  if (hud.bigHearts !== 'none') {
+    errors.push('big hearts should stay hidden on desktop');
+  }
 
   await page.screenshot({ path: shot });
   console.log('hud:', hud);

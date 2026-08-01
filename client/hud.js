@@ -13,6 +13,8 @@ export function createHud() {
   let lastEntry = null;
   let inGame = false;
   let maxPlayers = 16;
+  let startLives = 3;
+  let lastLives = -1;
 
   const joinOverlay = $('join-overlay');
   const deathOverlay = $('death-overlay');
@@ -94,6 +96,7 @@ export function createHud() {
 
   hud.setCfg = cfg => {
     maxPlayers = cfg.maxPlayers;
+    startLives = cfg.startLives;
   };
 
   hud.setCamMode = mode => {
@@ -117,6 +120,8 @@ export function createHud() {
     show($('cam-btn'), true);
     show($('rot-left'), true);
     show($('rot-right'), true);
+    show($('lives-big'), true);
+    lastLives = -1;
     nameInput.blur();
   };
 
@@ -128,6 +133,7 @@ export function createHud() {
 
   hud.showDeath = entry => {
     inGame = false;
+    show($('lives-big'), false);
     lastEntry = entry;
     $('death-stats').textContent =
       `SCORE ${entry.score} · REACHED L${entry.deepest} · ` +
@@ -156,6 +162,13 @@ export function createHud() {
       $('hud-lives').textContent = '♥'.repeat(Math.max(0, me.lives)) || '0';
       $('hud-level').textContent = snap.level;
       $('hud-depth').textContent = Math.floor(snap.depth);
+      if (me.lives !== lastLives) {
+        lastLives = me.lives;
+        const left = Math.max(0, me.lives);
+        $('lives-big').innerHTML =
+          '<span>♥</span>'.repeat(left) +
+          '<span class="lost">♥</span>'.repeat(Math.max(0, startLives - left));
+      }
     }
     const rows = snap.players
       .slice()

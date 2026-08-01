@@ -155,6 +155,24 @@ try {
   }
 
   await page.waitForTimeout(2500);
+
+  // Touch devices show big hearts under the play area instead of the tiny
+  // topbar LIVES text.
+  const hearts = await page.evaluate(() => ({
+    display: getComputedStyle(document.getElementById('lives-big')).display,
+    count: document.querySelectorAll('#lives-big span').length,
+    topbarLives: getComputedStyle(
+      document.querySelector('#topbar .stat.lives')
+    ).display
+  }));
+  if (hearts.display === 'none') errors.push('big hearts hidden on touch');
+  if (hearts.count !== 3) {
+    errors.push(`expected 3 hearts, got ${hearts.count}`);
+  }
+  if (hearts.topbarLives !== 'none') {
+    errors.push('topbar LIVES text should be hidden on touch');
+  }
+
   await page.screenshot({ path: shot('portrait-chase') });
   if (await overflow()) errors.push('horizontal overflow in game (portrait)');
 
