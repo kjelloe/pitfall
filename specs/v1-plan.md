@@ -164,4 +164,18 @@ the local player's tile down the shaft; the chase cam, now the default view;
 quick-start overlay. The client smoke verifies all of it: quick-start shows
 once and never again after reload, chase is default, camera toggles,
 rotation remaps a swipe to the correct world direction, and it screenshots
-chase, diorama, and rotated views.)
+chase, diorama, and rotated views.
+
+Mobile pass 2026-08-01, ahead of the user's phone playtest: responsive HUD
+via media queries — topbar stats fit at ≤600px (12px/10px gap) and ≤360px
+(11px/7px); players roster shrinks to 124px; overlay panels get screen-edge
+padding, full-width panels and a smaller h1 so the title doesn't wrap;
+rotate buttons drop to 62% height on coarse pointers (thumb reach);
+`touch-action: manipulation` on all buttons kills double-tap zoom; the
+quick-start MOVE line is rewritten swipe-first on coarse pointers.
+`tools/mobile_smoke.mjs` drives the real client under phone emulation
+(390x844 @3x, touch, mobile UA): quick-start tap-through, tap-to-join,
+swipe + rotated swipe verified against server state, horizontal-overflow
+assertions, coarse help text, and screenshots of portrait, landscape and
+320px layouts. Desktop layout is untouched (all changes behind max-width /
+pointer media queries).)

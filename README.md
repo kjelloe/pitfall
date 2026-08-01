@@ -89,6 +89,10 @@ npm test                     # server suite: real ws clients drive join/move/
 node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
                              # joins, verifies a synthetic touch swipe against
                              # server state, screenshots. BOTS=n for a crowd
+node tools/mobile_smoke.mjs  # same client under phone emulation (touch, 3x
+                             # DPR): quick-start, tap-to-join, swipe + rotated
+                             # swipe, layout overflow checks, screenshots of
+                             # portrait / landscape / 320px layouts
 ```
 
 The browser smoke needs a cached Playwright Chromium (`CHROMIUM_PATH` to

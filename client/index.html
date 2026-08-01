@@ -76,6 +76,7 @@
     position: fixed; inset: 0; z-index: 30;
     display: flex; align-items: center; justify-content: center;
     background: rgba(3, 4, 8, 0.72);
+    padding: 14px;
   }
   .panel {
     border: 2px solid var(--neon-cyan);
@@ -103,6 +104,7 @@
     padding: 8px; margin-bottom: 14px;
   }
   .panel input:focus { border-color: var(--neon-yellow); }
+  button { touch-action: manipulation; }
   .panel button {
     background: none; color: var(--neon-cyan);
     border: 1px solid var(--neon-cyan);
@@ -148,6 +150,25 @@
   .rot-btn:hover { border-color: var(--neon-cyan); }
   #rot-left { left: 8px; }
   #rot-right { right: 8px; }
+
+  /* phone layout: fit the 5 HUD stats, shrink the roster, keep panels off
+     the screen edges, and drop the rotate buttons to thumb height */
+  @media (max-width: 600px) {
+    #topbar { gap: 10px; font-size: 12px; padding: 6px 6px; }
+    #players {
+      top: 36px; width: 124px; font-size: 10px;
+      line-height: 1.6; padding: 4px 6px;
+    }
+    .panel { min-width: 0; width: 100%; padding: 22px 18px; }
+    .panel h1 { font-size: 19px; letter-spacing: 3px; }
+    #cam-btn { font-size: 18px; padding: 10px 18px; }
+  }
+  @media (max-width: 360px) {
+    #topbar { gap: 7px; font-size: 11px; }
+  }
+  @media (pointer: coarse) {
+    .rot-btn { top: 62%; }
+  }
 </style>
 <script type="importmap">
   { "imports": { "three": "./vendor/three.module.js" } }
@@ -175,7 +196,7 @@
     <div class="panel">
       <h2>QUICK START</h2>
       <div class="qs">
-        <p><b>MOVE</b> — WASD / ARROW KEYS. ON TOUCH: SWIPE, KEEP DRAGGING TO CHAIN HOPS.</p>
+        <p id="qs-move"><b>MOVE</b> — WASD / ARROW KEYS. ON TOUCH: SWIPE, KEEP DRAGGING TO CHAIN HOPS.</p>
         <p><b>SURVIVE</b> — DON'T BE UNDER A WALL OR SPIKE WHEN A LAYER SWEEPS PAST. COINS +10, GEMS +50.</p>
         <p><b>YOUR TILE</b> — THE GLOWING BEAM BELOW YOU MARKS THE TILE YOU'RE IN.</p>
         <p><b>3D VIEW / CHASE CAM</b> — BOTTOM-RIGHT BUTTON SWITCHES CAMERA.</p>

@@ -65,6 +65,8 @@ export function createHud() {
 
   if (window.matchMedia('(pointer: coarse)').matches) {
     $('help').textContent = 'SWIPE — MOVE';
+    $('qs-move').innerHTML =
+      '<b>MOVE</b> — SWIPE ANYWHERE, KEEP DRAGGING TO CHAIN HOPS.';
   }
 
   function renderBoard(table, youEntry) {
