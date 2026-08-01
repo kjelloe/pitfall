@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MULTI-PITFALL</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2305060a'/%3E%3Ccircle cx='8' cy='8' r='5' fill='none' stroke='%232bfcff' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --neon-pink: #ff3df0;
+    --neon-cyan: #2bfcff;
+    --neon-yellow: #ffe93d;
+    --bg: #05060a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+  body {
+    font-family: 'Courier New', ui-monospace, monospace;
+    color: #cfd6ff;
+    user-select: none;
+  }
+  #scene { position: fixed; inset: 0; }
+  #scene canvas { display: block; }
+
+  #scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.18) 3px, rgba(0, 0, 0, 0.18) 4px
+    );
+    mix-blend-mode: multiply;
+  }
+
+  .hud { position: fixed; z-index: 20; }
+  #topbar {
+    top: 0; left: 0; right: 0;
+    display: flex; gap: 24px; justify-content: center;
+    padding: 8px 16px;
+    background: linear-gradient(to bottom, rgba(5, 6, 10, 0.92), rgba(5, 6, 10, 0));
+    font-size: 15px; letter-spacing: 1px;
+    text-shadow: 0 0 6px currentColor;
+    white-space: nowrap;
+  }
+  #topbar .stat b { color: var(--neon-yellow); }
+  #topbar .stat.score b { color: var(--neon-cyan); }
+  #topbar .stat.lives b { color: var(--neon-pink); }
+
+  #players {
+    top: 48px; right: 8px; width: 190px;
+    font-size: 12px; line-height: 1.7;
+    background: rgba(5, 6, 10, 0.55);
+    border: 1px solid #232a4d;
+    padding: 6px 8px;
+  }
+  #players .row { display: flex; justify-content: space-between; }
+  #players .row.dead { opacity: 0.4; text-decoration: line-through; }
+  #players .row .nm { overflow: hidden; text-overflow: ellipsis; }
+
+  #toasts {
+    left: 50%; bottom: 12%; transform: translateX(-50%);
+    text-align: center; font-size: 14px; pointer-events: none;
+  }
+  #toasts div {
+    text-shadow: 0 0 8px currentColor;
+    animation: toast-fade 3s forwards;
+  }
+  @keyframes toast-fade {
+    0% { opacity: 0; transform: translateY(8px); }
+    10% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .overlay {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(3, 4, 8, 0.72);
+  }
+  .panel {
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 24px rgba(43, 252, 255, 0.35), inset 0 0 18px rgba(43, 252, 255, 0.08);
+    background: #070a14;
+    padding: 28px 36px;
+    text-align: center;
+    min-width: 320px; max-width: 480px;
+  }
+  .panel h1 {
+    font-size: 26px; letter-spacing: 4px; margin-bottom: 6px;
+    color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink);
+  }
+  .panel h2 {
+    font-size: 16px; letter-spacing: 2px; margin-bottom: 14px;
+    color: var(--neon-cyan);
+  }
+  .panel p.tag { font-size: 12px; margin-bottom: 18px; color: #7f89c9; }
+  .panel input {
+    width: 100%;
+    background: #01020a; color: var(--neon-yellow);
+    border: 1px solid #33407a; outline: none;
+    font-family: inherit; font-size: 18px; letter-spacing: 3px;
+    text-align: center; text-transform: uppercase;
+    padding: 8px; margin-bottom: 14px;
+  }
+  .panel input:focus { border-color: var(--neon-yellow); }
+  .panel button {
+    background: none; color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan);
+    font-family: inherit; font-size: 15px; letter-spacing: 2px;
+    padding: 8px 26px; cursor: pointer;
+  }
+  .panel button:hover { background: rgba(43, 252, 255, 0.12); }
+  .panel .err { color: #ff4d5e; font-size: 12px; min-height: 16px; margin-bottom: 8px; }
+  .panel table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; margin: 12px 0 18px; text-align: left;
+  }
+  .panel table th {
+    color: #7f89c9; font-weight: normal;
+    border-bottom: 1px solid #232a4d; padding: 2px 4px;
+  }
+  .panel table td { padding: 2px 4px; color: #cfd6ff; }
+  .panel table tr.you td { color: var(--neon-yellow); }
+  .panel .runstats { font-size: 13px; margin-bottom: 4px; color: var(--neon-cyan); }
+  .hidden { display: none !important; }
+  #help {
+    bottom: 8px; left: 12px; font-size: 11px; color: #59639c;
+  }
+</style>
+<script type="importmap">
+  { "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="scanlines"></div>
+
+  <div id="topbar" class="hud hidden">
+    <span class="stat score">SCORE <b id="hud-score">0</b></span>
+    <span class="stat">GOLD <b id="hud-gold">0</b></span>
+    <span class="stat lives">LIVES <b id="hud-lives">3</b></span>
+    <span class="stat">LEVEL <b id="hud-level">1</b></span>
+    <span class="stat">DEPTH <b id="hud-depth">0</b></span>
+  </div>
+  <div id="players" class="hud hidden"></div>
+  <div id="toasts" class="hud"></div>
+  <div id="help" class="hud hidden">WASD / ARROWS — MOVE</div>
+
+  <div id="join-overlay" class="overlay">
+    <div class="panel">
+      <h1>MULTI-PITFALL</h1>
+      <p class="tag">FALL. DODGE. GET RICH. GO DEEPER.</p>
+      <div class="err" id="join-err"></div>
+      <input id="join-name" maxlength="12" placeholder="YOUR NAME" autocomplete="off">
+      <br>
+      <button id="join-btn">DROP IN</button>
+    </div>
+  </div>
+
+  <div id="death-overlay" class="overlay hidden">
+    <div class="panel">
+      <h2>YOU DIED</h2>
+      <p class="runstats" id="death-stats"></p>
+      <table id="death-board"></table>
+      <button id="rejoin-btn">DROP BACK IN</button>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
