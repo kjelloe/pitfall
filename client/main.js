@@ -49,7 +49,26 @@ session.on('closed', () => hud.disconnected());
 hud.onJoin = name => session.join(name);
 hud.onRejoin = name => session.rejoin(name);
 
-bindInput(dir => session.move(dir));
+let camMode = 'chase';
+renderer.setCamera(camMode);
+hud.setCamMode(camMode);
+hud.onCamToggle = () => {
+  camMode = camMode === 'ortho' ? 'chase' : 'ortho';
+  renderer.setCamera(camMode);
+  hud.setCamMode(camMode);
+};
+
+let quarter = 0;
+hud.onRotate = dq => {
+  quarter += dq;
+  renderer.setRotation(quarter);
+};
+
+const DIR_RING = ['n', 'e', 's', 'w'];
+const remap = dir =>
+  DIR_RING[(((DIR_RING.indexOf(dir) - quarter) % 4) + 4) % 4];
+
+bindInput(dir => session.move(remap(dir)));
 
 function loop(t) {
   renderer.frame(t);

@@ -4,6 +4,9 @@
   "private": true,
   "description": "Pitfall: Drop-Zone — low-poly 16-player falling-pit arcade game",
   "main": "server/server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server/server.js",
     "test": "node --test test/"

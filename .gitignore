@@ -1,2 +1,12 @@
 node_modules/
 server/highscores.json
+*.tgz
+
+# Filled-in hosting config (holds SSH key + email + deploy user/host — never commit)
+# Sanitised templates live in docs/ (hetzner-cloud-init.yaml, hetzner-ssh-deploy.sh)
+cloud-init.yaml
+ssh-deploy.sh
+resume.txt
+ssh-deploy.sh
+deploy.md
+deploy/

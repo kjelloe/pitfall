@@ -3,7 +3,9 @@ const $ = id => document.getElementById(id);
 export function createHud() {
   const hud = {
     onJoin: () => {},
-    onRejoin: () => {}
+    onRejoin: () => {},
+    onCamToggle: () => {},
+    onRotate: () => {}
   };
 
   let lastName = '';
@@ -32,6 +34,33 @@ export function createHud() {
     show(deathOverlay, false);
     hud.onRejoin(lastName);
   });
+  $('cam-btn').addEventListener('click', () => {
+    $('cam-btn').blur();
+    hud.onCamToggle();
+  });
+  $('rot-left').addEventListener('click', () => {
+    $('rot-left').blur();
+    hud.onRotate(-1);
+  });
+  $('rot-right').addEventListener('click', () => {
+    $('rot-right').blur();
+    hud.onRotate(1);
+  });
+
+  const qsOverlay = $('quickstart-overlay');
+  let qsSeen = false;
+  try {
+    qsSeen = localStorage.getItem('dz-quickstart') === '1';
+  } catch (e) { /* storage unavailable — show it every time */ }
+  if (!qsSeen) show(qsOverlay, true);
+  $('quickstart-btn').addEventListener('click', () => {
+    show(qsOverlay, false);
+    try {
+      localStorage.setItem('dz-quickstart', '1');
+    } catch (e) { /* non-fatal */ }
+    nameInput.focus();
+  });
+
   nameInput.focus();
 
   if (window.matchMedia('(pointer: coarse)').matches) {
@@ -58,6 +87,10 @@ export function createHud() {
     maxPlayers = cfg.maxPlayers;
   };
 
+  hud.setCamMode = mode => {
+    $('cam-btn').textContent = mode === 'chase' ? '3D VIEW' : 'CHASE CAM';
+  };
+
   hud.setScores = board => {
     lastBoard = board || [];
     if (!deathOverlay.classList.contains('hidden') && lastEntry) {
@@ -72,6 +105,9 @@ export function createHud() {
     show($('topbar'), true);
     show($('players'), true);
     show($('help'), true);
+    show($('cam-btn'), true);
+    show($('rot-left'), true);
+    show($('rot-right'), true);
     nameInput.blur();
   };
 

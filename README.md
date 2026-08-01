@@ -27,6 +27,9 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
   server-side
 - 🎮 **Keyboard + touch** — WASD/arrows on desktop; swipe to hop on mobile,
   keep dragging to chain hops
+- 🎥 **Two cameras** — a chase cam that falls with you (default) or the
+  classic 3D diorama; rotate either view in 90° steps, and a glowing helper
+  column always marks the tile you're in
 - 🖥️ **Retro-friendly rendering** — flat-shaded neon low poly with CRT
   scanlines, on a three.js build that still falls back to WebGL1 for old GPUs
 
@@ -42,9 +45,14 @@ Open the URL, type a name, **DROP IN**. Friends on the LAN join at
 
 ## How to play
 
+Your first visit opens a **QUICK START** overlay covering all of the below;
+it never appears again once dismissed.
+
 | Action | Desktop | Touch |
 |---|---|---|
 | Hop N / S / E / W | `WASD` / arrow keys | Swipe (drag to chain hops) |
+| Switch camera | `CHASE CAM` / `3D VIEW` button | Same button |
+| Rotate view 90° | ⟲ / ⟳ buttons at the screen edges | Same buttons |
 
 Don't be under a wall or hazard when the layer sweeps past. Line up with
 coins (`+10 gold, +10 score`) and gems (`+50 score`). Every 10 layers is a
@@ -83,6 +91,27 @@ node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
 
 The browser smoke needs a cached Playwright Chromium (`CHROMIUM_PATH` to
 override). Screenshots land in your temp dir unless you pass a path.
+
+## Deploying
+
+The game runs at **pitfall.kjell.today** on the shared Hetzner box, following
+the multi-game hosting doctrine from the sibling `multiciv` repo
+(`ops/multi-game-hosting.md`): one subdomain per game, one loopback-bound
+port per game (pitfall owns **8130**), nginx in front for TLS and WebSocket
+upgrade, and a hardened systemd unit with memory/CPU caps so no game can take
+down its neighbours.
+
+Deployment is an **allowlist rsync** (only `client/ server/ shared/` +
+package files ever leave the machine), then `npm ci --omit=dev`, service
+restart, and a deploy guard: `sleep 3` + `curl /healthz` so a crash-looping
+unit fails the deploy loudly, plus a checksum comparison against partial
+syncs. High scores live outside the synced tree on the box, so redeploys
+never touch them. The server reads `PORT`, `HOST` and `SCORES_FILE` from
+the environment and answers `/healthz` with a counts-only JSON body.
+
+The deploy script, systemd unit, nginx block, and the step-by-step host
+walkthrough are hosting-specific and deliberately **not in this repository**
+(`ssh-deploy.sh`, `deploy.md`, `deploy/` are gitignored).
 
 ## Roadmap
 

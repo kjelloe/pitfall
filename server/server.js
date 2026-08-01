@@ -82,8 +82,18 @@ async function start(options = {}) {
     }
   });
 
-  const server = http.createServer(serveStatic);
-  const wss = new WebSocketServer({ server, path: '/ws' });
+  const server = http.createServer((req, res) => {
+    if (req.url.split('?')[0] === '/healthz') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, players: game.state.players.size }));
+      return;
+    }
+    serveStatic(req, res);
+  });
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 });
+  const maxSockets = options.maxSockets || 64;
+  const rateMax = options.rateMax || 300;
+  const RATE_WINDOW_MS = 10000;
 
   const send = (ws, msg) => {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
@@ -108,7 +118,13 @@ async function start(options = {}) {
   let layerCursor = 0;
 
   wss.on('connection', ws => {
+    if (wss.clients.size > maxSockets) {
+      ws.close(1013, 'server busy');
+      return;
+    }
     let playerId = null;
+    let msgCount = 0;
+    let windowStart = Date.now();
 
     const from = Math.max(0, Math.floor(game.state.depth) - 2);
     layerCursor = game.generatedCount();
@@ -123,6 +139,15 @@ async function start(options = {}) {
     });
 
     ws.on('message', data => {
+      const now = Date.now();
+      if (now - windowStart > RATE_WINDOW_MS) {
+        windowStart = now;
+        msgCount = 0;
+      }
+      if (++msgCount > rateMax) {
+        ws.terminate();
+        return;
+      }
       let msg;
       try {
         msg = JSON.parse(data);
@@ -174,7 +199,7 @@ async function start(options = {}) {
     }
   }, 1000 / C.TICK_HZ);
 
-  await new Promise(resolve => server.listen(port, resolve));
+  await new Promise(resolve => server.listen(port, options.host, resolve));
   const actualPort = server.address().port;
   console.log(`pitfall-drop-zone serving on http://localhost:${actualPort}`);
 
@@ -191,12 +216,14 @@ async function start(options = {}) {
 }
 
 if (require.main === module) {
-  start({ port: process.env.PORT ? Number(process.env.PORT) : 8080 }).catch(
-    err => {
-      console.error(err);
-      process.exit(1);
-    }
-  );
+  start({
+    port: process.env.PORT ? Number(process.env.PORT) : 8080,
+    host: process.env.HOST || undefined,
+    scoresFile: process.env.SCORES_FILE || undefined
+  }).catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
 }
 
 module.exports = { start };

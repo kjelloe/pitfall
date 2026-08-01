@@ -245,3 +245,96 @@ test('pit resets when a player joins after everyone died', async () => {
     await srv.close();
   }
 });
+
+test('honors PORT, HOST and SCORES_FILE env and serves /healthz', async () => {
+  const { spawn } = require('child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpf-env-'));
+  const scoresFile = path.join(dir, 'hs.json');
+  const seeded = [
+    { name: 'ENVSEED', score: 123, joinLevel: 1, deepest: 2, traveled: 1,
+      date: '2026-08-01' }
+  ];
+  fs.writeFileSync(scoresFile, JSON.stringify(seeded));
+
+  const child = spawn(process.execPath, ['server/server.js'], {
+    cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      PORT: '0',
+      HOST: '127.0.0.1',
+      SCORES_FILE: scoresFile
+    }
+  });
+  try {
+    const port = await new Promise((resolve, reject) => {
+      let out = '';
+      child.stdout.on('data', d => {
+        out += d;
+        const m = out.match(/localhost:(\d+)/);
+        if (m) resolve(Number(m[1]));
+      });
+      child.on('exit', c => reject(new Error(`server exited (${c}): ${out}`)));
+      setTimeout(() => reject(new Error('no listen line: ' + out)), 5000);
+    });
+
+    const health = await fetch(`http://127.0.0.1:${port}/healthz`);
+    assert.strictEqual(health.status, 200);
+    const body = await health.json();
+    assert.strictEqual(body.ok, true);
+    assert.strictEqual(typeof body.players, 'number');
+
+    const c1 = await connect(port);
+    const hello = await c1.waitFor(m => m.t === 'hello');
+    assert.ok(
+      hello.scores.some(e => e.name === 'ENVSEED'),
+      'seeded SCORES_FILE board not served'
+    );
+    c1.ws.close();
+  } finally {
+    child.kill();
+    await new Promise(resolve => child.on('exit', resolve));
+  }
+});
+
+test('hardening: strips markup from names, caps sockets, rate-limits', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpf-hard-'));
+  const srv = await start({
+    port: 0,
+    scoresFile: path.join(dir, 'hs.json'),
+    maxSockets: 4,
+    rateMax: 10
+  });
+  try {
+    const c1 = await connect(srv.port);
+    c1.send({ t: 'join', name: '<b>ev&"x</b>' });
+    const joined = await c1.waitFor(m => m.t === 'joined');
+    const snap = await c1.waitFor(m => myPlayer(m, joined.id));
+    const name = snap.players.find(p => p.id === joined.id).name;
+    assert.ok(!/[<>&"'`]/.test(name), `markup survived: "${name}"`);
+    assert.ok(name.length > 0);
+
+    const extras = [
+      await connect(srv.port),
+      await connect(srv.port),
+      await connect(srv.port)
+    ];
+    const fifth = new WebSocket(`ws://127.0.0.1:${srv.port}/ws`);
+    await new Promise((resolve, reject) => {
+      fifth.on('close', resolve);
+      fifth.on('error', reject);
+      setTimeout(() => reject(new Error('5th socket not closed')), 3000);
+    });
+    for (const c of extras) c.ws.close();
+
+    const flooder = await connect(srv.port);
+    for (let i = 0; i < 15; i++) flooder.send({ t: 'noise' });
+    await new Promise((resolve, reject) => {
+      flooder.ws.on('close', resolve);
+      setTimeout(() => reject(new Error('flooder not terminated')), 3000);
+    });
+
+    c1.ws.close();
+  } finally {
+    await srv.close();
+  }
+});

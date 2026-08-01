@@ -84,6 +84,13 @@ for (let i = 1; i <= BOTS; i++) bots.push(spawnBot(srv.port, `BOT${i}`));
 
 try {
   await page.goto(`http://127.0.0.1:${srv.port}/`);
+
+  // First visit: quick-start overlay must appear; dismiss it to reach join.
+  await page.waitForSelector('#quickstart-overlay:not(.hidden)', {
+    timeout: 5000
+  });
+  await page.click('#quickstart-btn');
+
   await page.fill('#join-name', 'SMOKE');
   await page.click('#join-btn');
   await page.waitForSelector('#topbar:not(.hidden)', { timeout: 5000 });
@@ -92,31 +99,36 @@ try {
   // (verified against authoritative server state).
   const me = () =>
     [...srv.game.state.players.values()].find(p => p.name === 'SMOKE');
+  const swipe = dx =>
+    page.evaluate(d => {
+      const el = document.getElementById('scene');
+      const mk = (x, y) =>
+        new Touch({ identifier: 7, target: el, clientX: x, clientY: y });
+      const opts = t => ({
+        touches: t, changedTouches: t, bubbles: true, cancelable: true
+      });
+      el.dispatchEvent(new TouchEvent('touchstart', opts([mk(300, 300)])));
+      el.dispatchEvent(new TouchEvent('touchmove', opts([mk(300 + d, 300)])));
+      el.dispatchEvent(
+        new TouchEvent('touchend', {
+          touches: [], changedTouches: [mk(300 + d, 300)],
+          bubbles: true, cancelable: true
+        })
+      );
+    }, dx);
+  const settled = async pred => {
+    const t0 = Date.now();
+    while (!pred() && Date.now() - t0 < 2000) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return pred();
+  };
+
   const x0 = me().x;
   const goEast = x0 <= 3;
-  await page.evaluate(east => {
-    const el = document.getElementById('scene');
-    const mk = (x, y) =>
-      new Touch({ identifier: 7, target: el, clientX: x, clientY: y });
-    const opts = t => ({
-      touches: t, changedTouches: t, bubbles: true, cancelable: true
-    });
-    const endX = east ? 360 : 240;
-    el.dispatchEvent(new TouchEvent('touchstart', opts([mk(300, 300)])));
-    el.dispatchEvent(new TouchEvent('touchmove', opts([mk(endX, 300)])));
-    el.dispatchEvent(
-      new TouchEvent('touchend', {
-        touches: [], changedTouches: [mk(endX, 300)],
-        bubbles: true, cancelable: true
-      })
-    );
-  }, goEast);
+  await swipe(goEast ? 60 : -60);
   const wantX = x0 + (goEast ? 1 : -1);
-  const t0 = Date.now();
-  while (me().x !== wantX && Date.now() - t0 < 2000) {
-    await new Promise(r => setTimeout(r, 50));
-  }
-  if (me().x !== wantX) {
+  if (!(await settled(() => me().x === wantX))) {
     errors.push(`touch swipe did not move player (x ${x0} -> ${me().x})`);
   } else {
     console.log('touch swipe OK:', x0, '->', me().x);
@@ -135,6 +147,46 @@ try {
   await page.screenshot({ path: shot });
   console.log('hud:', hud);
   console.log('screenshot:', shot);
+
+  // Camera: chase is the default, so the button offers the 3D diorama.
+  let camLabel = (await page.textContent('#cam-btn')).trim();
+  if (camLabel !== '3D VIEW') {
+    errors.push(`cam button initial label: "${camLabel}"`);
+  }
+  await page.click('#cam-btn');
+  camLabel = (await page.textContent('#cam-btn')).trim();
+  if (camLabel !== 'CHASE CAM') {
+    errors.push(`cam button label after toggle: "${camLabel}"`);
+  }
+  await page.waitForTimeout(1200);
+  const dioramaShot = shot.replace(/\.png$/, '-diorama.png');
+  await page.screenshot({ path: dioramaShot });
+  console.log('diorama screenshot:', dioramaShot);
+
+  // Rotate right once: a screen-east swipe must now map to world north.
+  await page.click('#rot-right');
+  await page.waitForTimeout(400);
+  const z0 = me().z;
+  const north = z0 > 0;
+  await swipe(north ? 60 : -60);
+  const wantZ = z0 + (north ? -1 : 1);
+  if (!(await settled(() => me().z === wantZ))) {
+    errors.push(`rotated swipe did not remap (z ${z0} -> ${me().z})`);
+  } else {
+    console.log('rotated swipe OK: z', z0, '->', me().z);
+  }
+  await page.waitForTimeout(600);
+  const rotShot = shot.replace(/\.png$/, '-rotated.png');
+  await page.screenshot({ path: rotShot });
+  console.log('rotated screenshot:', rotShot);
+
+  // Revisit: quick-start must stay hidden once dismissed.
+  await page.reload();
+  await page.waitForSelector('#join-overlay:not(.hidden)', { timeout: 5000 });
+  const qsAgain = await page.evaluate(
+    () => !document.getElementById('quickstart-overlay').classList.contains('hidden')
+  );
+  if (qsAgain) errors.push('quickstart overlay shown again on revisit');
 
   if (!hud.canvas) errors.push('no canvas rendered');
   if (!(Number(hud.depth) > 0)) errors.push('depth did not advance');

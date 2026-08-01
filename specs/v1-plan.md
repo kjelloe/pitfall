@@ -11,13 +11,13 @@ three.js instead of ASCII. Up to 16 players, drop-in multiplayer.*
 
 | Question | Decision |
 |---|---|
-| Camera | Tilted ~30° orthographic 2.5D diorama looking down at the 7x7 grid; the shaft's layers scroll up past the fixed grid plane |
+| Camera | Tilted ~30° orthographic 2.5D diorama looking down at the 7x7 grid; the shaft's layers scroll up past the fixed grid plane. Post-playtest (2026-08-01): a perspective chase cam behind/above your avatar is the **default on every load** (toggle via the CHASE CAM / 3D VIEW button; not persisted — chase always wins on startup). Rotate buttons on the screen edges orbit either camera in 90° steps; movement input is remapped so controls stay screen-relative, and the wall behind the camera auto-hides |
 | Movement | Discrete grid hops (WASD/arrows), lerp-animated, non-lethal player overlap |
 | Descent | Continuous layer stream: obstacle layers rush up at ramping fall speed; every 10 layers = 1 level |
 | Architecture | Lightweight server-authoritative: one Node process (HTTP static + `ws`), 20Hz tick, JSON messages. No determinism/replay machinery in v1 |
 | Art | Neon-retro low poly: flat-shaded meshes, bright ANSI-like palette on dark shaft, fog-to-black below, CSS scanline overlay |
 | v1 scope | Core fall + drop-in: move/dodge, coins/gems, lives, death, personal-depth scoring, session leaderboard, high-score persistence. No shops/items/zone themes |
-| Join flow | One always-open session per server; open the URL, type a name, drop in at current depth |
+| Join flow | One always-open session per server; open the URL, type a name, drop in at current depth. First-ever visit shows a QUICK START overlay (movement, survival rules, helper column, camera/rotate buttons); dismissal is remembered in localStorage (`dz-quickstart`) |
 | Platforms | Desktop keyboard first; swipe touch controls added 2026-08-01 (same client, `(pointer: coarse)` gates the help text only — swipe always listens) |
 
 ## Game rules (v1)
@@ -95,10 +95,65 @@ Visible window ~24 layers × ≤49 cells as small per-layer InstancedMeshes:
 a few thousand instances worst case — comfortably WebGL1-class. Layers build
 lazily as they enter the window and dispose after passing the plane.
 
+## Deployment (added 2026-08-01, doctrine-conformant same day)
+
+Target: the shared Hetzner box behind **pitfall.kjell.today**, per the
+sibling doctrine `multiciv/ops/multi-game-hosting.md` (subdomain per game;
+pitfall owns loopback port **8130**, recorded in that doc's port table; never
+touch neighbouring games' nginx/systemd/files; `nginx -t` before reload;
+reload never restart). An earlier `npm pack` + tarball approach was replaced
+the same day to copy the sibling's pattern instead.
+
+`./ssh-deploy.sh` (repo root, mirrors `multiciv/ssh-deploy.sh`): provenance
+guard (dirty-tree prompt, `--yes` to skip) → allowlist rsync (`client/
+server/ shared/ package*.json` only; `/server/highscores.json` excluded) →
+`npm ci --omit=dev` → `systemctl restart pitfall` → deploy guard (`sleep 3` +
+`curl 127.0.0.1:8130/healthz` catches crash-loops) → package.json sha1
+content check against partial syncs.
+
+`deploy/pitfall.service`: User=kjelloe, WorkingDirectory=/opt/pitfall,
+Environment PORT=8130 / HOST=127.0.0.1 /
+SCORES_FILE=/opt/pitfall/saves/highscores.json (saves/ is outside the rsync
+allowlist so scores survive redeploys), MemoryMax=512M + CPUQuota=50%
+(shared-box caps), NoNewPrivileges/PrivateTmp/ProtectSystem/ProtectHome
+hardening. `deploy/nginx-pitfall`: server block with the mandatory `/ws`
+Upgrade/Connection headers (the `map $connection_upgrade` lives in the
+existing multiciv config — do not redeclare). One-time setup steps (unit,
+nginx, certbot `--expand` with both names, neighbour check):
+`deploy/README.md`.
+
+Server env: `PORT`, `HOST` (loopback bind on the box), `SCORES_FILE`;
+`/healthz` returns counts-only JSON (`{ok, players}` — public through
+nginx). All covered by test 6 in `test/smoke.test.js` (spawns the real
+server process with all three env vars, asserts /healthz and a seeded
+scores board).
+
+App-level hardening (2026-08-01, doctrine §6 "app caps alongside systemd
+caps"): ws `maxPayload` 1 KB; concurrent-socket cap 64 (`options.maxSockets`,
+excess closed 1013); per-socket rate limit 300 msgs / 10 s
+(`options.rateMax`, flooders terminated); `sanitizeName` strips
+`<>&"'` + backtick on top of the printable-ASCII filter (HUD renders names
+via innerHTML — markup must die server-side); V8 heap capped at 384 MB in
+the unit's ExecStart, below MemoryMax=512M, so memory pressure means GC not
+a cgroup OOM-kill. Covered by test 7 (evil name, 5th socket on a
+4-socket server, flooder on a 10-msg limit).
+
+Hosting-specific files are kept OUT of version control (user ruling
+2026-08-01): `ssh-deploy.sh`, `deploy.md` (the operator's step-by-step
+first-deploy walkthrough) and `deploy/` (unit + nginx reference copies) are
+gitignored — they exist only in the local working tree and on the box.
+
 ## Out of scope for v1 (round two candidates)
 
 Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, sound
 (PC-speaker-style WebAudio blips), spectator camera, join codes/multiple
 rooms, global leaderboard, seeded/deterministic pits, replays.
 (Touch controls landed 2026-08-01: swipe to hop, drag past the threshold to
-chain hops, verified by a synthetic-swipe check in `tools/client_smoke.mjs`.)
+chain hops, verified by a synthetic-swipe check in `tools/client_smoke.mjs`.
+Playtest rounds 2026-08-01 added: a semi-transparent helper column marking
+the local player's tile down the shaft; the chase cam, now the default view;
+90° view rotation with screen-relative input remapping; and a first-visit
+quick-start overlay. The client smoke verifies all of it: quick-start shows
+once and never again after reload, chase is default, camera toggles,
+rotation remaps a swipe to the correct world direction, and it screenshots
+chase, diorama, and rotated views.)

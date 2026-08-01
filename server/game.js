@@ -116,6 +116,7 @@ function createGame(C, opts = {}) {
   function sanitizeName(raw) {
     const s = String(raw || '')
       .replace(/[^\x20-\x7e]/g, '')
+      .replace(/[<>&"'`]/g, '')
       .trim()
       .toUpperCase()
       .slice(0, 12);

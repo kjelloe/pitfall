@@ -19,6 +19,13 @@ export function createRenderer(container) {
   camera.position.set(0, 16, 10);
   camera.lookAt(0, -3, 0);
 
+  const chaseCam = new THREE.PerspectiveCamera(72, 1, 0.1, 200);
+  chaseCam.position.set(0, 6.4, 2.6);
+  const chaseTarget = new THREE.Vector3();
+  let camMode = 'ortho';
+  let az = 0;
+  let azTarget = 0;
+
   const FRUSTUM_H = 19;
   function resize() {
     const w = container.clientWidth || window.innerWidth;
@@ -29,6 +36,8 @@ export function createRenderer(container) {
     camera.top = FRUSTUM_H / 2;
     camera.bottom = -FRUSTUM_H / 2;
     camera.updateProjectionMatrix();
+    chaseCam.aspect = aspect;
+    chaseCam.updateProjectionMatrix();
     renderer.setSize(w, h);
   }
   window.addEventListener('resize', resize);
@@ -38,6 +47,16 @@ export function createRenderer(container) {
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(5, 12, 4);
   scene.add(sun);
+
+  const COL_H = 57;
+  const column = new THREE.Mesh(
+    new THREE.BoxGeometry(1.02, COL_H, 1.02),
+    new THREE.MeshBasicMaterial({
+      color: 0xffe93d, transparent: true, opacity: 0.11, depthWrite: false
+    })
+  );
+  column.visible = false;
+  scene.add(column);
 
   const geos = {
     wall: new THREE.BoxGeometry(1.06, 1.15, 1.06),
@@ -66,6 +85,7 @@ export function createRenderer(container) {
   const layerRows = [];
   const layerMeshes = new Map();
   const avatars = new Map();
+  const walls = [];
 
   let displayDepth = 0;
   let snapDepth = 0;
@@ -86,15 +106,17 @@ export function createRenderer(container) {
     scene.add(grid);
 
     const wallMat = new THREE.MeshLambertMaterial({ color: 0x0c1030 });
-    const mk = (w, d, x, z) => {
+    const mk = (w, d, x, z, nx, nz) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, 70, d), wallMat);
       m.position.set(x, -32, z);
       scene.add(m);
+      walls.push({ mesh: m, nx, nz });
     };
     const t = 0.6;
-    mk(cfg.grid * CELL_W + 2 * t + 1, t, 0, -(half + t));
-    mk(t, cfg.grid * CELL_W + 1, -(half + t), 0);
-    mk(t, cfg.grid * CELL_W + 1, half + t, 0);
+    mk(cfg.grid * CELL_W + 2 * t + 1, t, 0, -(half + t), 0, -1);
+    mk(t, cfg.grid * CELL_W + 1, -(half + t), 0, -1, 0);
+    mk(t, cfg.grid * CELL_W + 1, half + t, 0, 1, 0);
+    mk(cfg.grid * CELL_W + 2 * t + 1, t, 0, half + t, 0, 1);
   }
 
   function rowOf(d) {
@@ -201,11 +223,13 @@ export function createRenderer(container) {
       ring.position.y = 0.06;
       group.add(ring);
     }
-    group.add(makeLabel(p.name, cfg.colors[p.color]));
+    const label = makeLabel(p.name, cfg.colors[p.color]);
+    group.add(label);
     group.position.set(gx(p.x), 0, gx(p.z));
     scene.add(group);
     return {
       group,
+      label,
       cell: { x: p.x, z: p.z },
       animFrom: null,
       animT0: 0,
@@ -311,9 +335,45 @@ export function createRenderer(container) {
         }
         a.group.position.y = Math.sin(now / 320 + a.seed) * 0.07;
         a.group.visible = !(p && p.inv && Math.floor(now / 120) % 2 === 0);
+        a.label.visible = !(camMode === 'chase' && id === myId);
       }
 
-      renderer.render(scene, camera);
+      const me = avatars.get(myId);
+      column.visible = !!me;
+      if (me) {
+        column.position.set(
+          me.group.position.x, -COL_H / 2, me.group.position.z
+        );
+      }
+
+      az += (azTarget - az) * Math.min(1, dt / 160);
+      if (Math.abs(azTarget - az) < 0.001) az = azTarget;
+      const sinA = Math.sin(az);
+      const cosA = Math.cos(az);
+      for (const w of walls) {
+        w.mesh.visible = w.nx * sinA + w.nz * cosA < 0.5;
+      }
+
+      if (camMode === 'chase') {
+        const tx = me ? me.group.position.x : 0;
+        const tz = me ? me.group.position.z : 0;
+        chaseTarget.set(tx + 2.6 * sinA, 6.4, tz + 2.6 * cosA);
+        chaseCam.position.lerp(chaseTarget, Math.min(1, dt / 140));
+        chaseCam.lookAt(tx - 0.9 * sinA, -5.5, tz - 0.9 * cosA);
+        renderer.render(scene, chaseCam);
+      } else {
+        camera.position.set(10 * sinA, 16, 10 * cosA);
+        camera.lookAt(0, -3, 0);
+        renderer.render(scene, camera);
+      }
+    },
+
+    setCamera(mode) {
+      camMode = mode;
+    },
+
+    setRotation(quarter) {
+      azTarget = (quarter * Math.PI) / 2;
     }
   };
 }
