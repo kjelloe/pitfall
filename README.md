@@ -26,7 +26,8 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
 - 🏆 **Hall of fame** — session leaderboard on death, high scores persisted
   server-side
 - 🎮 **Keyboard + touch** — WASD/arrows on desktop; swipe to hop on mobile,
-  keep dragging to chain hops
+  keep dragging to chain hops. HUD and overlays adapt to phone screens down
+  to 320px wide
 - 🎥 **Two cameras** — a chase cam that falls with you (default) or the
   classic 3D diorama; rotate either view in 90° steps, and a glowing helper
   column always marks the tile you're in

@@ -18,7 +18,7 @@ three.js instead of ASCII. Up to 16 players, drop-in multiplayer.*
 | Art | Neon-retro low poly: flat-shaded meshes, bright ANSI-like palette on dark shaft, fog-to-black below, CSS scanline overlay |
 | v1 scope | Core fall + drop-in: move/dodge, coins/gems, lives, death, personal-depth scoring, session leaderboard, high-score persistence. No shops/items/zone themes |
 | Join flow | One always-open session per server; open the URL, type a name, drop in at current depth. First-ever visit shows a QUICK START overlay (movement, survival rules, helper column, camera/rotate buttons); dismissal is remembered in localStorage (`dz-quickstart`) |
-| Platforms | Desktop keyboard first; swipe touch controls added 2026-08-01 (same client, `(pointer: coarse)` gates the help text only — swipe always listens) |
+| Platforms | Desktop keyboard first; swipe touch controls added 2026-08-01 (same client — swipe always listens). Mobile pass same day: responsive HUD at ≤600px/≤360px, and `(pointer: coarse)` gates the help text, swipe-first quick-start wording and thumb-height rotate buttons. Verified via `tools/mobile_smoke.mjs` phone emulation |
 
 ## Game rules (v1)
 
