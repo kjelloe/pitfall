@@ -186,6 +186,35 @@ try {
   await page.screenshot({ path: rotShot });
   console.log('rotated screenshot:', rotShot);
 
+  // Death confetti: kill every bot at once (SMOKE protected by invuln) and
+  // let the client render the bursts — a crash here lands in `errors` via
+  // the pageerror hook.
+  const gs = srv.game.state;
+  const mine = me().id;
+  [...gs.players.values()].find(p => p.id === mine).invulnUntil =
+    Date.now() + 15000;
+  for (const p of gs.players.values()) {
+    if (p.id !== mine && p.status === 'alive') {
+      p.lives = 1;
+      p.invulnUntil = 0;
+    }
+  }
+  const dd = Math.floor(gs.depth);
+  for (const off of [1, 2]) gs.layers[dd + off] = '#'.repeat(49);
+  const tBurst = Date.now();
+  while (
+    [...gs.players.values()].some(
+      p => p.id !== mine && p.status === 'alive'
+    ) &&
+    Date.now() - tBurst < 8000
+  ) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  await page.waitForTimeout(500);
+  const burstShot = shot.replace(/\.png$/, '-burst.png');
+  await page.screenshot({ path: burstShot });
+  console.log('death burst screenshot:', burstShot);
+
   // Revisit: the stored seat token must auto-reclaim the run (no join
   // screen), and the quick-start must stay hidden once dismissed.
   await page.reload();
