@@ -83,7 +83,9 @@ bundler, no framework.
 
 ```bash
 npm test                     # server suite: real ws clients drive join/move/
-                             # pickup/death/16-cap/drop-in fairness/pit reset
+                             # pickup/death/16-cap/drop-in fairness/pit reset,
+                             # env config + /healthz, hardening (markup-stripped
+                             # names, socket cap, message rate limit)
 node tools/client_smoke.mjs  # real client in headless Chromium (SwiftShader):
                              # joins, verifies a synthetic touch swipe against
                              # server state, screenshots. BOTS=n for a crowd

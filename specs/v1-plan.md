@@ -143,6 +143,14 @@ Hosting-specific files are kept OUT of version control (user ruling
 first-deploy walkthrough) and `deploy/` (unit + nginx reference copies) are
 gitignored — they exist only in the local working tree and on the box.
 
+Repo/publication (2026-08-01): public GitHub `kjelloe/pitfall`. Work lands
+on the `dev_night` branch (Claude is authorized to commit and push there;
+the user handles all merges to `dev`/`main`). Before the branch was first
+published, local history containing deploy tooling was squashed away so no
+hosting-specific file or ssh detail exists in any pushed commit — keep it
+that way: scan `git log --name-only origin/main..HEAD` for deploy paths
+before any push.
+
 ## Out of scope for v1 (round two candidates)
 
 Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, sound
