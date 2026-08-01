@@ -104,7 +104,12 @@ down in HALL OF FAME. This is what players hum afterwards.
   with the join screen.
 - Zone crossfades (~1.5 s) trigger on the levelup event; death sting ducks
   music −12 dB then HALL OF FAME fades in; S3 plays on the reset event.
-- A mute/volume toggle joins the HUD when audio lands (persisted in
-  localStorage). Audio playback code (WebAudio, dual-format loading) is a
+- **REQUIRED (user ruling 2026-08-01): a music ON/OFF toggle for players**,
+  in the HUD next to the camera button — default ON, choice persisted in
+  localStorage, and it must ship in the same release as the first music
+  integration. (A separate SFX toggle arrives with the blip SFX.)
+- Audio playback code (WebAudio, dual-format loading, crossfades) is a
   separate implementation task tracked in the roadmap — tracks can be
   delivered and integrated incrementally in priority order.
+- A shareable HTML render of this spec for the composer lives at
+  `specs/game-soundtrack-design.html` — keep both files in sync.

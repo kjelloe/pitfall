@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitfall: Drop-Zone — Soundtrack Design Spec</title>
+<style>
+  :root {
+    --cyan: #2bfcff; --magenta: #ff3df0; --yellow: #ffe93d;
+    --green: #3dff6e; --orange: #ff8a3d;
+    --bg: #05060a; --panel: #0a0d18; --line: #232a4d;
+    --text: #cfd6ff; --dim: #7f89c9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Courier New', ui-monospace, Consolas, monospace;
+    line-height: 1.55; padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 {
+    color: var(--magenta); text-shadow: 0 0 14px var(--magenta);
+    letter-spacing: 3px; font-size: 26px; margin-bottom: 4px;
+  }
+  .subtitle { color: var(--dim); font-size: 13px; margin-bottom: 28px; }
+  h2 {
+    color: var(--cyan); letter-spacing: 2px; font-size: 17px;
+    margin: 36px 0 12px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+    text-shadow: 0 0 8px rgba(43, 252, 255, 0.5);
+  }
+  h3 { color: var(--yellow); font-size: 14px; letter-spacing: 1px; margin: 20px 0 8px; }
+  p { margin-bottom: 12px; font-size: 14px; }
+  ul { margin: 0 0 12px 22px; font-size: 14px; }
+  li { margin-bottom: 8px; }
+  b, strong { color: var(--yellow); font-weight: bold; }
+  em { color: var(--dim); font-style: italic; }
+  code {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 1px 5px; font-size: 13px; color: var(--cyan);
+  }
+  .callout {
+    border: 1px solid var(--cyan); background: var(--panel);
+    box-shadow: 0 0 18px rgba(43, 252, 255, 0.15), inset 0 0 14px rgba(43, 252, 255, 0.05);
+    padding: 14px 18px; margin: 16px 0; font-size: 14px;
+  }
+  .callout.warn { border-color: var(--yellow); box-shadow: 0 0 18px rgba(255, 233, 61, 0.15); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0 20px;
+    font-size: 13px;
+  }
+  th {
+    color: var(--dim); font-weight: normal; text-align: left;
+    letter-spacing: 1px; border-bottom: 1px solid var(--cyan);
+    padding: 6px 8px;
+  }
+  td { border-bottom: 1px solid var(--line); padding: 8px; vertical-align: top; }
+  tr:hover td { background: rgba(43, 252, 255, 0.04); }
+  .table-scroll { overflow-x: auto; }
+  .swatch {
+    display: inline-block; width: 12px; height: 12px; margin-right: 7px;
+    vertical-align: baseline; border-radius: 2px;
+  }
+  .track { color: var(--text); font-weight: bold; white-space: nowrap; }
+  .num { color: var(--dim); }
+  .pal { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 18px; }
+  .pal div {
+    padding: 6px 12px; font-size: 12px; letter-spacing: 1px;
+    border: 1px solid var(--line); background: var(--panel);
+  }
+  .pal span { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 2px; }
+  .prio { color: var(--green); font-weight: bold; }
+  footer { margin-top: 44px; color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+  @media (max-width: 600px) { body { padding: 20px 10px 60px; } h1 { font-size: 20px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>PITFALL: DROP-ZONE</h1>
+<div class="subtitle">SOUNDTRACK DESIGN SPEC — FOR THE COMPOSER · 2026-08-01</div>
+
+<p><em>This page covers music only. In-game blip SFX (move / coin / hit) stay
+code-generated in retro style and are not commissioned here — except the four
+short stingers listed below.</em></p>
+
+<h2>THE GAME IN 30 SECONDS</h2>
+<p>Up to 16 players fall together down an endless neon shaft, hopping on a
+7×7 grid to dodge walls and spikes and grab coins and gems. Flat-shaded
+low-poly 3D, dark background, bright neon palette, CRT scanline overlay.
+Every 10 layers is a level; the fall gets faster and denser until death is
+certain. Death drops you to a hall-of-fame screen; you can always drop back
+in. Runs are short and intense: reaching level 50 takes about
+<b>4 minutes</b> of continuous play.</p>
+
+<div class="pal">
+  <div><span style="background:#2bfcff"></span>CYAN #2BFCFF</div>
+  <div><span style="background:#ff3df0"></span>MAGENTA #FF3DF0</div>
+  <div><span style="background:#ffe93d"></span>YELLOW #FFE93D</div>
+  <div><span style="background:#3dff6e"></span>GREEN #3DFF6E</div>
+  <div><span style="background:#ff8a3d"></span>ORANGE #FF8A3D</div>
+</div>
+
+<div class="callout">
+<b>Aesthetic north star: neon-retro synthwave with chiptune blood.</b>
+Analog-style saw/square leads, arpeggiators, FM bells, gated-reverb snares,
+side-chained pump. Think outrun / darksynth, not orchestral, nothing
+acoustic. The music should feel like the visuals look: bright shapes on
+black.
+</div>
+
+<h2>HOW MUSIC MAPS TO THE GAME</h2>
+<p>The game has three states (title/join &rarr; falling &rarr; death board)
+plus a level counter. Zones change every 10 levels, and the <b>level rings
+the player falls through already cycle five neon colors</b> — the five zone
+tracks are those colors as sound. Tracks crossfade (~1.5&nbsp;s) at zone
+boundaries, so all zone tracks should be <b>harmonically compatible</b>
+(same key or close neighbors — e.g. all built around the A&nbsp;minor /
+C&nbsp;major family) and keep a steady internal BPM for clean looping.</p>
+
+<p>Real dwell times per zone (computed from the game's fall-speed ramp):</p>
+
+<div class="table-scroll"><table>
+<tr><th>Zone</th><th>Levels</th><th>Fall speed</th><th>Time a player spends in it</th></tr>
+<tr><td><span class="swatch" style="background:#ffe93d"></span>Z1</td><td>1–10</td><td>0.8 &rarr; 1.6 layers/s</td><td>~87 s</td></tr>
+<tr><td><span class="swatch" style="background:#2bfcff"></span>Z2</td><td>11–20</td><td>1.7 &rarr; 2.5</td><td>~48 s</td></tr>
+<tr><td><span class="swatch" style="background:#ff3df0"></span>Z3</td><td>21–30</td><td>2.6 &rarr; 3.2 (cap)</td><td>~34 s</td></tr>
+<tr><td><span class="swatch" style="background:#3dff6e"></span>Z4</td><td>31–40</td><td>3.2 (capped)</td><td>~31 s</td></tr>
+<tr><td><span class="swatch" style="background:#ff8a3d"></span>Z5</td><td>41–50</td><td>3.2</td><td>~31 s</td></tr>
+</table></div>
+
+<p>Beyond level 50 the zone cycle repeats (Z1 &rarr; Z2 &rarr; &hellip;)
+with the game already at maximum speed — the "second lap" through the calm
+Z1 track over a maxed-out pit is an intentional contrast moment.</p>
+
+<h2>TRACK LIST — LOOPS</h2>
+
+<div class="table-scroll"><table>
+<tr><th>#</th><th>Track</th><th>Where it plays</th><th>Loop</th><th>BPM</th><th>Mood / theme</th></tr>
+<tr>
+  <td class="num">1</td>
+  <td class="track">DROP-IN<br><em>(title)</em></td>
+  <td>Join screen + quick-start overlay, before the run starts</td>
+  <td>60–90 s</td><td>~100</td>
+  <td>The invitation. Warm, hooky mid-tempo synthwave; neon sign buzzing
+  over a dark street. Confident, not tense — this screen is where friends
+  type their names. Contains the game's main melodic motif (see below).</td>
+</tr>
+<tr>
+  <td class="num">2</td>
+  <td class="track"><span class="swatch" style="background:#ffe93d"></span>Z1 — GOLD RIM</td>
+  <td>Levels 1–10 — first ~90 s of every run</td>
+  <td>80–90 s</td><td>~110</td>
+  <td>Sunny-side arcade. Playful, bouncy, coin-bright FM bells; the pit
+  still feels like a game. Introduces the motif in its cleanest form.</td>
+</tr>
+<tr>
+  <td class="num">3</td>
+  <td class="track"><span class="swatch" style="background:#2bfcff"></span>Z2 — CYAN DEPTHS</td>
+  <td>Levels 11–20 (~48 s of play)</td>
+  <td>45–60 s</td><td>~120</td>
+  <td>The water line. Cooler, hypnotic; rolling arpeggios, wider stereo, a
+  little pressure in the low end. The fun is getting serious.</td>
+</tr>
+<tr>
+  <td class="num">4</td>
+  <td class="track"><span class="swatch" style="background:#ff3df0"></span>Z3 — MAGENTA STATIC</td>
+  <td>Levels 21–30 (~34 s)</td>
+  <td>40–50 s</td><td>~128</td>
+  <td>Darksynth kicks in. Distorted bass, urgent 16th-note drive,
+  alarm-like stabs. First zone at max fall speed — the player is surviving,
+  not sightseeing.</td>
+</tr>
+<tr>
+  <td class="num">5</td>
+  <td class="track"><span class="swatch" style="background:#3dff6e"></span>Z4 — GREEN ABYSS</td>
+  <td>Levels 31–40 (~31 s)</td>
+  <td>40–50 s</td><td>~136</td>
+  <td>Acid pit. Squelchy 303-style line, relentless drums, dissonant edges.
+  Claustrophobic.</td>
+</tr>
+<tr>
+  <td class="num">6</td>
+  <td class="track"><span class="swatch" style="background:#ff8a3d"></span>Z5 — EMBER CORE</td>
+  <td>Levels 41–50 (~31 s)</td>
+  <td>40–50 s</td><td>~144</td>
+  <td>Peak intensity, the furnace floor. Everything at once but still
+  musical; a triumphant edge — anyone hearing this track is having a great
+  run.</td>
+</tr>
+<tr>
+  <td class="num">7</td>
+  <td class="track">HALL OF FAME</td>
+  <td>Death screen / leaderboard</td>
+  <td>30–45 s</td><td>~85</td>
+  <td>Somber but cool afterglow; the motif slowed and spaced out,
+  tape-warble nostalgia. Should make "DROP BACK IN" feel inevitable, not
+  defeated.</td>
+</tr>
+</table></div>
+
+<div class="callout">
+<b>The motif:</b> one short (2–4 bar) melodic identity that appears in the
+title track, opens Z1, resurfaces mutated in deeper zones, and closes
+slowed down in HALL OF FAME. This is what players hum afterwards.
+</div>
+
+<h2>TRACK LIST — STINGERS</h2>
+<p><em>One-shots, layered over whatever loop is playing.</em></p>
+
+<div class="table-scroll"><table>
+<tr><th>#</th><th>Stinger</th><th>Trigger</th><th>Length</th><th>Notes</th></tr>
+<tr><td class="num">S1</td><td class="track">LEVEL-UP</td>
+  <td>Crossing a level ring</td><td>0.5–1.5 s</td>
+  <td>Rising neon whoosh + bell; must layer cleanly over every zone track
+  (motif-neutral, percussive).</td></tr>
+<tr><td class="num">S2</td><td class="track">DEATH</td>
+  <td>Player loses last life</td><td>2–3 s</td>
+  <td>The classic descending "power-down" tone, produced in synthwave.
+  Ducks the zone music, hands off into HALL OF FAME.</td></tr>
+<tr><td class="num">S3</td><td class="track">PIT RESET</td>
+  <td>"THE PIT RESETS" — fresh run after everyone died</td><td>2–4 s</td>
+  <td>Riser / rewind — the shaft winding back up.</td></tr>
+<tr><td class="num">S4</td><td class="track">NEW HIGH SCORE</td>
+  <td>Death entry lands in the top list</td><td>3–5 s</td>
+  <td>Small fanfare, plays over HALL OF FAME without fighting it.</td></tr>
+</table></div>
+
+<h2>DELIVERY REQUIREMENTS</h2>
+<ul>
+  <li><b>Masters:</b> WAV, 44.1 kHz / 24-bit, stereo. Loops delivered
+  <b>pre-trimmed for seamless looping</b> (no reverb tail past the loop
+  point — bake the tail into the loop start). Please verify each loop by
+  playing it 3× back-to-back.</li>
+  <li>We encode to OGG Vorbis + AAC/M4A (Safari) ourselves;
+  whole-soundtrack budget over the wire is ~8–10 MB, which the lengths
+  above fit comfortably.</li>
+  <li><b>Loudness:</b> loops at <b>−16 LUFS</b> integrated, stingers up to
+  −12 LUFS, true peak ≤ −1.0 dBTP everywhere. Consistency between zone
+  tracks matters more than absolute level (they crossfade mid-play).</li>
+  <li><b>Tempo/key sheet:</b> a one-line note per track (BPM, key, bar
+  count) so integration can beat-align crossfades later.</li>
+  <li><b>Nice-to-have</b> (only if the workflow makes it cheap): stem
+  bounces per zone track (drums / bass / music) — a future version may add
+  intensity layers within a zone as the fall speed ramps. Not required.</li>
+</ul>
+
+<h2>PRIORITY ORDER</h2>
+
+<div class="table-scroll"><table>
+<tr><th>Priority</th><th>Tracks</th><th>Rationale</th></tr>
+<tr><td class="prio">P0</td><td>1 DROP-IN · 2 Z1 · 7 HALL OF FAME · S2 death</td>
+  <td>A complete session loop for most players (join &rarr; fall &rarr; die
+  &rarr; board) — shippable on its own.</td></tr>
+<tr><td class="prio">P1</td><td>3 Z2 · 4 Z3 · S1 level-up · S3 reset</td>
+  <td>Covers everything a good player hears in a typical run.</td></tr>
+<tr><td class="prio">P2</td><td>5 Z4 · 6 Z5 · S4 high score · stems</td>
+  <td>Deep-run rewards and polish.</td></tr>
+</table></div>
+
+<h2>GOOD TO KNOW (OUR SIDE — NO ACTION NEEDED)</h2>
+<ul>
+  <li>Browsers block autoplay, so music starts on the player's first tap
+  (the DROP IN button). The title track begins after that gesture.</li>
+  <li>Zone crossfades (~1.5 s) trigger at level boundaries; the death
+  stinger ducks music −12 dB before HALL OF FAME fades in.</li>
+  <li>Players get a <b>music ON/OFF toggle</b> in the HUD (default ON,
+  choice remembered) — shipping together with the first music
+  integration.</li>
+  <li>Tracks can be delivered and integrated incrementally in priority
+  order — P0 alone already ships.</li>
+</ul>
+
+<footer>
+PITFALL: DROP-ZONE · soundtrack design spec · generated from
+specs/game-soundtrack-design.md — the two stay in sync.
+</footer>
+
+</div>
+</body>
+</html>
