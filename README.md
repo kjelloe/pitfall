@@ -123,8 +123,10 @@ walkthrough are hosting-specific and deliberately **not in this repository**
 ## Roadmap
 
 Shops with items (Shield, Parachute, Magnet), zone themes per 10 levels,
-PC-speaker-style WebAudio sound, spectator camera, join codes / multiple
-rooms, global leaderboard, seeded deterministic pits and replays.
+music + audio (human-composed soundtrack in progress — design in
+[`specs/game-soundtrack-design.md`](specs/game-soundtrack-design.md), plus
+retro blip SFX), spectator camera, join codes / multiple rooms, global
+leaderboard, seeded deterministic pits and replays.
 
 ## Lineage
 

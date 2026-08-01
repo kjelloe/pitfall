@@ -153,9 +153,11 @@ before any push.
 
 ## Out of scope for v1 (round two candidates)
 
-Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, sound
-(PC-speaker-style WebAudio blips), spectator camera, join codes/multiple
-rooms, global leaderboard, seeded/deterministic pits, replays.
+Shops + items (Shield/Parachute/Magnet), zone themes per 10 levels, audio —
+a human composer is engaged (2026-08-01): track/zone mapping, lengths and
+themes in `game-soundtrack-design.md`; retro blip SFX stay code-generated —
+spectator camera, join codes/multiple rooms, global leaderboard,
+seeded/deterministic pits, replays.
 (Touch controls landed 2026-08-01: swipe to hop, drag past the threshold to
 chain hops, verified by a synthetic-swipe check in `tools/client_smoke.mjs`.
 Playtest rounds 2026-08-01 added: a semi-transparent helper column marking
