@@ -131,6 +131,17 @@
   #help {
     bottom: 8px; left: 12px; font-size: 11px; color: #59639c;
   }
+  #reconnect {
+    top: 44px; left: 50%; transform: translateX(-50%);
+    background: rgba(255, 61, 240, 0.14);
+    border: 1px solid var(--neon-pink); color: var(--neon-pink);
+    padding: 4px 14px; font-size: 12px; letter-spacing: 2px;
+    z-index: 25; animation: reconnect-pulse 1.2s infinite;
+  }
+  @keyframes reconnect-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
   #cam-btn {
     position: fixed; right: 8px; bottom: 8px; z-index: 20;
     background: rgba(5, 6, 10, 0.55); color: var(--neon-cyan);
@@ -188,6 +199,7 @@
   <div id="players" class="hud hidden"></div>
   <div id="toasts" class="hud"></div>
   <div id="help" class="hud hidden">WASD / ARROWS — MOVE</div>
+  <div id="reconnect" class="hud hidden">RECONNECTING&hellip;</div>
   <button id="cam-btn" class="hud hidden">CHASE CAM</button>
   <button id="rot-left" class="hud rot-btn hidden" title="Rotate view left">&#10226;</button>
   <button id="rot-right" class="hud rot-btn hidden" title="Rotate view right">&#10227;</button>

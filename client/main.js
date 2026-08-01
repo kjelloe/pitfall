@@ -10,7 +10,9 @@ const hud = createHud();
 session.on('hello', m => {
   window.__colors = m.cfg.colors;
   hud.setCfg(m.cfg);
+  hud.setReconnecting(false);
   renderer.init(m.cfg);
+  renderer.resetLayers();
   renderer.primeDepth(m.depth);
   renderer.setLayers(m.layersFrom, m.rows);
   hud.setScores(m.scores);
@@ -42,9 +44,15 @@ session.on('snap', m => {
 });
 
 session.on('scores', m => hud.setScores(m.board));
-session.on('joined', () => hud.onJoined());
+session.on('joined', m => {
+  hud.onJoined();
+  if (m.entry) hud.showDeath(m.entry);
+});
 session.on('reject', m => hud.joinError(m.reason));
-session.on('closed', () => hud.disconnected());
+session.on('reclaim', m => {
+  if (m.ok === false) hud.seatExpired();
+});
+session.on('closed', () => hud.setReconnecting(true));
 
 hud.onJoin = name => session.join(name);
 hud.onRejoin = name => session.rejoin(name);

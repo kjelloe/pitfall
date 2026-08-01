@@ -12,6 +12,7 @@ export const MAX_FALL_SPEED = 3.2;
 
 export const VIEW_AHEAD = 24;
 export const GEN_AHEAD = 48;
+export const RECONNECT_GRACE_MS = 45000;
 
 export const CELL = {
   EMPTY: '.',

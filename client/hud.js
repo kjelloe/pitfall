@@ -20,9 +20,16 @@ export function createHud() {
 
   const show = (el, on) => el.classList.toggle('hidden', !on);
 
+  try {
+    nameInput.value = localStorage.getItem('dz-name') || '';
+  } catch (e) { /* storage unavailable */ }
+
   function submitJoin() {
     const name = nameInput.value.trim() || 'ANON';
     lastName = name;
+    try {
+      localStorage.setItem('dz-name', name);
+    } catch (e) { /* non-fatal */ }
     $('join-err').textContent = '';
     hud.onJoin(name);
   }
@@ -131,11 +138,14 @@ export function createHud() {
     show(deathOverlay, true);
   };
 
-  hud.disconnected = () => {
-    show(deathOverlay, false);
+  hud.setReconnecting = on => {
+    show($('reconnect'), on);
+  };
+
+  hud.seatExpired = () => {
+    if (inGame) return;
     show(joinOverlay, true);
-    $('join-err').textContent = 'DISCONNECTED — REFRESH THE PAGE';
-    $('join-btn').disabled = true;
+    $('join-err').textContent = 'SEAT EXPIRED — DROP BACK IN';
   };
 
   hud.applySnap = (snap, myId) => {

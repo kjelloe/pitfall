@@ -244,10 +244,21 @@ export function createRenderer(container) {
     avatars.delete(id);
   }
 
+  let staticsBuilt = false;
+
+  function clearLayers() {
+    for (const d of [...layerMeshes.keys()]) dropLayer(d);
+    layerRows.length = 0;
+    layerBase = 0;
+  }
+
   return {
     init(config) {
       cfg = config;
-      buildStatics();
+      if (!staticsBuilt) {
+        buildStatics();
+        staticsBuilt = true;
+      }
     },
 
     primeDepth(depth) {
@@ -256,8 +267,11 @@ export function createRenderer(container) {
       snapTime = performance.now();
     },
 
+    resetLayers: clearLayers,
+
     setLayers(from, rows) {
       if (!rows || !rows.length) return;
+      if (from === 0 && layerRows.length > 0) clearLayers();
       if (layerRows.length === 0) layerBase = from;
       for (let i = 0; i < rows.length; i++) setRow(from + i, rows[i]);
     },

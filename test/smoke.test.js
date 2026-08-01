@@ -240,6 +240,11 @@ test('pit resets when a player joins after everyone died', async () => {
     );
     assert.ok(snap.depth < 5, `expected reset depth, got ${snap.depth}`);
     assert.strictEqual(snap.level, 1);
+
+    // Regression: the regenerated layers must be re-broadcast from 0 so
+    // connected clients don't fall through invisible stale levels.
+    const fresh = await c1.waitFor(m => m.t === 'layers' && m.from === 0);
+    assert.ok(fresh.rows.length > 0);
     c1.ws.close();
   } finally {
     await srv.close();
@@ -336,5 +341,91 @@ test('hardening: strips markup from names, caps sockets, rate-limits', async () 
     c1.ws.close();
   } finally {
     await srv.close();
+  }
+});
+
+test('seat survives a dropped socket; token reclaims it, grace expires it', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpf-grace-'));
+
+  // Long grace: drop the socket, die while away, reclaim the same seat.
+  const srv = await start({
+    port: 0,
+    scoresFile: path.join(dir, 'hs1.json'),
+    graceMs: 8000
+  });
+  try {
+    const c1 = await connect(srv.port);
+    await c1.waitFor(m => m.t === 'hello');
+    c1.send({ t: 'join', name: 'GHOST' });
+    const joined = await c1.waitFor(m => m.t === 'joined');
+    assert.ok(joined.token, 'join must return a seat token');
+    await c1.waitFor(m => myPlayer(m, joined.id));
+
+    const g = srv.game;
+    const live = [...g.state.players.values()].find(p => p.id === joined.id);
+    live.lives = 1;
+    live.invulnUntil = 0;
+    const d = Math.floor(g.state.depth);
+    for (const off of [1, 2]) g.state.layers[d + off] = '#'.repeat(49);
+
+    c1.ws.terminate(); // 1006-style drop, no clean handshake
+    await new Promise(r => setTimeout(r, 300));
+    assert.ok(
+      g.state.players.has(joined.id),
+      'seat freed immediately on socket drop'
+    );
+
+    // Dies while disconnected — the pit does not wait for anyone.
+    const t0 = Date.now();
+    while (
+      g.state.players.get(joined.id)?.status !== 'dead' &&
+      Date.now() - t0 < 8000
+    ) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    assert.strictEqual(g.state.players.get(joined.id)?.status, 'dead');
+
+    const c2 = await connect(srv.port);
+    await c2.waitFor(m => m.t === 'hello');
+    c2.send({ t: 'reclaim', token: joined.token });
+    const back = await c2.waitFor(m => m.t === 'joined');
+    assert.strictEqual(back.id, joined.id, 'reclaim must return the same seat');
+    assert.ok(back.entry, 'death-while-away must deliver the run entry');
+    assert.strictEqual(back.entry.joinLevel, 1);
+    c2.ws.close();
+  } finally {
+    await srv.close();
+  }
+
+  // Short grace: an expired seat is gone and the token stops working.
+  const srv2 = await start({
+    port: 0,
+    scoresFile: path.join(dir, 'hs2.json'),
+    graceMs: 300
+  });
+  try {
+    const c1 = await connect(srv2.port);
+    await c1.waitFor(m => m.t === 'hello');
+    c1.send({ t: 'join', name: 'EXPIRED' });
+    const joined = await c1.waitFor(m => m.t === 'joined');
+    c1.ws.terminate();
+
+    const t0 = Date.now();
+    while (srv2.game.state.players.has(joined.id) && Date.now() - t0 < 3000) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+    assert.ok(
+      !srv2.game.state.players.has(joined.id),
+      'seat must be freed after grace expires'
+    );
+
+    const c2 = await connect(srv2.port);
+    await c2.waitFor(m => m.t === 'hello');
+    c2.send({ t: 'reclaim', token: joined.token });
+    const miss = await c2.waitFor(m => m.t === 'reclaim');
+    assert.strictEqual(miss.ok, false);
+    c2.ws.close();
+  } finally {
+    await srv2.close();
   }
 });

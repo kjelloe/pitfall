@@ -180,13 +180,18 @@ try {
   await page.screenshot({ path: rotShot });
   console.log('rotated screenshot:', rotShot);
 
-  // Revisit: quick-start must stay hidden once dismissed.
+  // Revisit: the stored seat token must auto-reclaim the run (no join
+  // screen), and the quick-start must stay hidden once dismissed.
   await page.reload();
-  await page.waitForSelector('#join-overlay:not(.hidden)', { timeout: 5000 });
-  const qsAgain = await page.evaluate(
-    () => !document.getElementById('quickstart-overlay').classList.contains('hidden')
-  );
-  if (qsAgain) errors.push('quickstart overlay shown again on revisit');
+  await page.waitForSelector('#topbar:not(.hidden)', { timeout: 5000 });
+  const revisit = await page.evaluate(() => ({
+    qs: !document.getElementById('quickstart-overlay').classList.contains('hidden'),
+    join: !document.getElementById('join-overlay').classList.contains('hidden')
+  }));
+  if (revisit.qs) errors.push('quickstart overlay shown again on revisit');
+  if (revisit.join) errors.push('join overlay shown despite valid seat token');
+  if (!me()) errors.push('seat not reclaimed after reload');
+  else console.log('reload reclaim OK: seat retained');
 
   if (!hud.canvas) errors.push('no canvas rendered');
   if (!(Number(hud.depth) > 0)) errors.push('depth did not advance');

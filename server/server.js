@@ -1,6 +1,7 @@
 'use strict';
 
 const http = require('http');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -94,6 +95,11 @@ async function start(options = {}) {
   const maxSockets = options.maxSockets || 64;
   const rateMax = options.rateMax || 300;
   const RATE_WINDOW_MS = 10000;
+  const graceMs =
+    options.graceMs !== undefined ? options.graceMs : C.RECONNECT_GRACE_MS;
+  // Presence is a server-side fact with a timeout, not a socket. A dropped
+  // socket marks the seat disconnected; the token reclaims it within grace.
+  const seats = new Map(); // token -> { playerId, ws, disconnectedAt, entry }
 
   const send = (ws, msg) => {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
@@ -123,6 +129,7 @@ async function start(options = {}) {
       return;
     }
     let playerId = null;
+    let myToken = null;
     let msgCount = 0;
     let windowStart = Date.now();
 
@@ -159,20 +166,50 @@ async function start(options = {}) {
           game.removePlayer(playerId);
           playerId = null;
         }
+        if (myToken) {
+          seats.delete(myToken);
+          myToken = null;
+        }
         const res = game.addPlayer(msg.name);
         if (res.error) {
           send(ws, { t: 'reject', reason: res.error });
           return;
         }
         playerId = res.player.id;
-        send(ws, { t: 'joined', id: playerId });
+        myToken = crypto.randomBytes(12).toString('hex');
+        seats.set(myToken, {
+          playerId, ws, disconnectedAt: null, entry: null
+        });
+        send(ws, { t: 'joined', id: playerId, token: myToken });
+      } else if (msg.t === 'reclaim') {
+        const seat = seats.get(String(msg.token || ''));
+        if (!seat || !game.state.players.has(seat.playerId)) {
+          send(ws, { t: 'reclaim', ok: false });
+          return;
+        }
+        if (seat.ws && seat.ws !== ws && seat.ws.readyState === seat.ws.OPEN) {
+          seat.ws.close(4000, 'superseded');
+        }
+        seat.ws = ws;
+        seat.disconnectedAt = null;
+        playerId = seat.playerId;
+        myToken = String(msg.token);
+        const joined = { t: 'joined', id: playerId, token: myToken };
+        if (seat.entry) joined.entry = seat.entry;
+        send(ws, joined);
       } else if (msg.t === 'move' && playerId) {
         game.move(playerId, msg.dir);
       }
     });
 
     ws.on('close', () => {
-      if (playerId) game.removePlayer(playerId);
+      if (!playerId) return;
+      const seat = myToken && seats.get(myToken);
+      if (seat && seat.ws === ws) {
+        seat.disconnectedAt = Date.now(); // hold the seat; sweep enforces grace
+      } else if (!seat) {
+        game.removePlayer(playerId);
+      }
     });
   });
 
@@ -183,6 +220,16 @@ async function start(options = {}) {
     last = t;
     game.tick(dt);
 
+    for (const [token, seat] of seats) {
+      if (seat.disconnectedAt && t - seat.disconnectedAt > graceMs) {
+        game.removePlayer(seat.playerId);
+        seats.delete(token);
+      }
+    }
+
+    // A pit reset regenerates layers from scratch; rewind the cursor so the
+    // fresh rows are re-broadcast (clients clear their copy on from === 0).
+    if (game.generatedCount() < layerCursor) layerCursor = 0;
     if (game.generatedCount() > layerCursor) {
       broadcast({
         t: 'layers',
@@ -193,6 +240,13 @@ async function start(options = {}) {
     }
 
     const snap = game.snapshot();
+    for (const e of snap.ev) {
+      if (e.k === 'death') {
+        for (const seat of seats.values()) {
+          if (seat.playerId === e.id) seat.entry = e.entry;
+        }
+      }
+    }
     broadcast({ t: 'snap', ...snap });
     if (snap.ev.some(e => e.k === 'death' || e.k === 'leave')) {
       broadcast({ t: 'scores', board: game.state.board.slice(0, 10) });

@@ -75,7 +75,7 @@ Dependency tree: `ws` (runtime) + vendored three.js. Nothing else.
 ## Protocol (JSON over ws)
 
 Client → server: `{t:'join', name}` · `{t:'move', dir:'n'|'s'|'e'|'w'}` ·
-`{t:'rejoin', name}`
+`{t:'rejoin', name}` · `{t:'reclaim', token}`
 
 Server → client:
 - `{t:'welcome', id, cfg, depth, players, layers, scores}` — cfg carries grid
@@ -88,6 +88,44 @@ Server → client:
 
 Client renders `displayDepth` by extrapolating snap depth with `speed` and
 easing toward corrections — layers scroll smoothly between 20Hz snaps.
+
+## Connection resilience (2026-08-01, from playtest A)
+
+Adopted RetroMultiCiv's model (their write-up, adapted to a realtime
+faller): **presence is a server-side fact with a timeout; the socket is a
+disposable transport**. Mobile browsers kill backgrounded sockets (1006, no
+handshake) — that is a normal event, not an error path.
+
+- **Seat grace**: a dropped socket does not free the seat. It is marked
+  disconnected and held for `RECONNECT_GRACE_MS` (45 s, `shared/const.mjs`;
+  `options.graceMs` for tests). The avatar keeps falling meanwhile — the
+  pit waits for nobody — and can die naturally; the run entry is stored on
+  the seat. After grace the seat is removed (normal leave).
+- **Token identity**: `joined` carries a private seat token (crypto-random,
+  stored client-side in localStorage at join time — nothing else needs
+  persisting, the server owns all state). `{t:'reclaim', token}` on any new
+  socket rebinds the same seat idempotently — same tab, new tab, or after
+  reload; a superseded socket is closed (4000). Reclaiming a seat that died
+  while away returns the stored entry so the client can show the death
+  screen. Unknown/expired token → `{t:'reclaim', ok:false}` → client clears
+  the token and shows the join screen ("SEAT EXPIRED").
+- **Client reconnect**: every close is treated as recoverable (never branch
+  on close codes). Retry at 1 s with backoff to 5 s, plus an immediate
+  reconnect on `visibilitychange → visible`. A pulsing RECONNECTING banner
+  replaces the old fatal "refresh the page" state. Each reconnect gets a
+  fresh `hello`; the renderer guards re-init and resets its layer cache.
+- **Pit-reset layer stream fix** (playtest A bug): `resetPit()` regenerates
+  layers from scratch, dropping `generatedCount()` below the broadcast
+  cursor — clients kept stale geometry and the first levels looked empty.
+  The server now rewinds the cursor and re-broadcasts from 0; clients treat
+  a `layers` message with `from === 0` as "clear and rebuild".
+- Known trade-off: disconnected-but-alive ghosts count toward the 16 cap
+  and block pit reset until they die or grace expires — bounded at 45 s.
+
+Covered by test 8 (drop → seat held → dies while away → reclaim returns
+same id + entry; short-grace server → seat freed, token refused) and the
+reset-rebroadcast assertion in test 5; the browser smoke reloads the page
+and verifies the seat auto-reclaims.
 
 ## Renderer economics
 

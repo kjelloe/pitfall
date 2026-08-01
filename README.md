@@ -33,6 +33,8 @@ A low-poly three.js re-imagining of the classic falling-down-the-well /
   column always marks the tile you're in
 - 🖥️ **Retro-friendly rendering** — flat-shaded neon low poly with CRT
   scanlines, on a three.js build that still falls back to WebGL1 for old GPUs
+- 🔌 **Drop-proof sessions** — background the tab, lock the phone, reload
+  the page: your seat is held for 45 s and reclaimed automatically
 
 ## Quick start
 
