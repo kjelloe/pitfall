@@ -334,6 +334,7 @@ async function start(options = {}) {
   return {
     port: actualPort,
     game,
+    wss,
     close: () =>
       new Promise(resolve => {
         clearInterval(timer);

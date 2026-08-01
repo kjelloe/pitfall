@@ -148,10 +148,19 @@ export function createHud() {
     show($('reconnect'), on);
   };
 
+  // The server no longer knows our seat (run ended + grace expired while
+  // the tab was away, or a long outage). Never leave the player on a frozen
+  // HUD — always land on a screen with a button that acts.
   hud.seatExpired = () => {
-    if (inGame) return;
+    inGame = false;
+    show($('topbar'), false);
+    show($('players'), false);
+    show($('help'), false);
+    show($('lives-big'), false);
+    if (!deathOverlay.classList.contains('hidden')) return; // rejoin offered
     show(joinOverlay, true);
-    $('join-err').textContent = 'SEAT EXPIRED — DROP BACK IN';
+    $('join-err').textContent =
+      'YOUR RUN ENDED WHILE YOU WERE AWAY — DROP BACK IN';
   };
 
   hud.applySnap = (snap, myId) => {

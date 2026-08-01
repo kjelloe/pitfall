@@ -199,6 +199,24 @@ try {
   if (!me()) errors.push('seat not reclaimed after reload');
   else console.log('reload reclaim OK: seat retained');
 
+  // Seat gone while away (run ended + grace expired): the client must land
+  // on an actionable drop-back-in screen, never a frozen HUD.
+  srv.game.removePlayer(me().id);
+  for (const ws of srv.wss.clients) ws.close(4001, 'test drop');
+  await page.waitForSelector('#join-overlay:not(.hidden)', { timeout: 8000 });
+  const endedMsg = (await page.textContent('#join-err')).trim();
+  if (!/RUN ENDED/.test(endedMsg)) {
+    errors.push(`expected run-ended message, got: "${endedMsg}"`);
+  }
+  const staleHud = await page.evaluate(() =>
+    !document.getElementById('topbar').classList.contains('hidden')
+  );
+  if (staleHud) errors.push('stale topbar still visible after seat loss');
+  await page.click('#join-btn');
+  await page.waitForSelector('#topbar:not(.hidden)', { timeout: 5000 });
+  if (!me()) errors.push('drop-back-in after seat loss did not join');
+  else console.log('seat-gone recovery OK: rejoined via on-screen button');
+
   if (!hud.canvas) errors.push('no canvas rendered');
   if (!(Number(hud.depth) > 0)) errors.push('depth did not advance');
   if (errors.length) {

@@ -136,8 +136,16 @@ handshake) — that is a normal event, not an error path.
   mid-run player ~3 s of RECONNECTING banner, not their run. On the box the
   file lives in `/opt/pitfall/saves/` (already writable, already outside
   the rsync allowlist — no unit change needed). Players without a seat are
-  dropped on restore; a token the server no longer knows still gets the
-  friendly "SEAT EXPIRED — DROP BACK IN" join screen, never a dead end.
+  dropped on restore.
+- **Seat-gone recovery** (playtest 2 finding: away long enough for the run
+  to end + grace to expire left the phone on a frozen HUD needing a manual
+  refresh): a refused reclaim now always transitions the UI — in-game HUD
+  hidden, join overlay shown with "YOUR RUN ENDED WHILE YOU WERE AWAY —
+  DROP BACK IN" and the prefilled name, one tap from a new run. If the
+  death overlay is already up, its DROP BACK IN button serves instead. The
+  desktop smoke drives the whole path: force-drop sockets + forget the
+  seat server-side (via the `wss` test hook on `start()`) → auto-reconnect
+  refused → actionable screen → button rejoins.
 - Known trade-off: disconnected-but-alive ghosts count toward the 16 cap
   and block pit reset until they die or grace expires — bounded at 45 s.
 
