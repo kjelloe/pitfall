@@ -97,6 +97,11 @@ easing toward corrections — layers scroll smoothly between 20Hz snaps.
 
 ## Connection resilience (2026-08-01, from playtest A)
 
+*(The reusable, ally-facing version of this section — with code excerpts,
+generalized lessons and the test matrix — lives in
+`multiplayer-game-design.md`. Keep the two in sync on architecture
+changes.)*
+
 Adopted RetroMultiCiv's model (their write-up, adapted to a realtime
 faller): **presence is a server-side fact with a timeout; the socket is a
 disposable transport**. Mobile browsers kill backgrounded sockets (1006, no

@@ -72,13 +72,16 @@ out — rejoining starts a brand-new run from the pit's current depth.
 One Node.js process serves the static client and runs the authoritative game
 over WebSocket at a 20Hz tick — clients send movement intents and render
 interpolated snapshots; all collision, pickup, scoring, and death decisions
-happen server-side.
+happen server-side. How drop-in, reconnect grace, seat tokens and
+restart-surviving sessions fit together is written up for reuse in
+[`specs/multiplayer-game-design.md`](specs/multiplayer-game-design.md).
 
 ```
 server/   CommonJS — server.js (HTTP static + ws + tick pump), game.js (game logic)
 shared/   const.mjs — tuning constants (cap, speeds, palette), served to the browser as-is
 client/   No-build ES modules — session seam, three.js renderer, HUD, input
-specs/    Design of record (v1 build plan, decision log)
+specs/    Design of record: v1 build plan + decision log, soundtrack design
+          (for the composer), multiplayer drop-in/re-join guide (for allies)
 tools/    Headless-browser smoke tests (desktop + phone emulation)
 ```
 
